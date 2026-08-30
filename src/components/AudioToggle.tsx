@@ -4,15 +4,10 @@ import { Volume2, VolumeX } from 'lucide-react';
 
 export const AudioToggle: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [hasAudio, setHasAudio] = useState(soundEngine.getTrackMeta().hasAudioSource);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const unsubPlay = soundEngine.subscribe((playing) => setIsPlaying(playing));
-    const unsubMeta = soundEngine.subscribeMeta((meta) => setHasAudio(meta.hasAudioSource));
-    const unsubReq = soundEngine.onRequestUpload(() => {
-      fileInputRef.current?.click();
-    });
 
     // Keyboard shortcut for owner/admin: Ctrl+Shift+U or Alt+U
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -25,18 +20,12 @@ export const AudioToggle: React.FC = () => {
 
     return () => {
       unsubPlay();
-      unsubMeta();
-      unsubReq();
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
 
   const handleToggle = () => {
     soundEngine.playClick();
-    if (!hasAudio) {
-      fileInputRef.current?.click();
-      return;
-    }
     soundEngine.toggle();
   };
 

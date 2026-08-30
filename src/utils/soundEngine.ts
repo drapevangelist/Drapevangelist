@@ -62,9 +62,41 @@ class SoundEngine {
     this.audioElement.volume = this.volume;
     this.audioElement.loop = true;
 
-    // Check default public audio track paths
-    const candidates = ['/audio/track.mp3', '/audio/gonna-be-better.mp3', '/track.mp3'];
+    // Check audio track paths: env variable or static public files
+    const envUrl = (import.meta as unknown as { env?: { VITE_AUDIO_URL?: string } })?.env?.VITE_AUDIO_URL;
+    const candidates = [
+      ...(envUrl ? [envUrl] : []),
+      '/audio/track.mp3',
+      '/audio/track.wav',
+      '/audio/track.m4a',
+      '/audio/gonna-be-better.mp3',
+      '/audio/Gonna-Be-Better.mp3',
+      '/audio/Gonna Be Better.mp3',
+      '/audio/audio.mp3',
+      '/audio/song.mp3',
+      '/track.mp3',
+      '/track.wav',
+      '/track.m4a',
+      '/gonna-be-better.mp3',
+      '/Gonna-Be-Better.mp3',
+      '/Gonna Be Better.mp3',
+    ];
+    let candidateIndex = 0;
     this.audioElement.src = candidates[0];
+
+    this.audioElement.addEventListener('error', () => {
+      if (candidateIndex < candidates.length - 1) {
+        candidateIndex++;
+        if (this.audioElement) {
+          this.audioElement.src = candidates[candidateIndex];
+          this.audioElement.load();
+        }
+      } else {
+        // All static candidates checked
+        this.isPlaying = false;
+        this.notify();
+      }
+    });
 
     this.audioElement.addEventListener('timeupdate', () => {
       if (this.audioElement) {
@@ -106,14 +138,6 @@ class SoundEngine {
     this.audioElement.addEventListener('pause', () => {
       this.isPlaying = false;
       this.notify();
-    });
-
-    this.audioElement.addEventListener('error', () => {
-      // Audio source not yet loaded
-      if (!this.trackMeta.hasAudioSource) {
-        this.isPlaying = false;
-        this.notify();
-      }
     });
   }
 
@@ -294,14 +318,10 @@ class SoundEngine {
             this.notify();
           })
           .catch(() => {
-            // Audio file needs user selection or interaction
             this.isPlaying = false;
             this.notify();
-            this.triggerUploadRequest();
           });
       }
-    } else {
-      this.triggerUploadRequest();
     }
   }
 
