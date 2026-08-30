@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { soundEngine } from '../utils/soundEngine';
 import { Sparkles, X, Trophy, Zap } from 'lucide-react';
-import mascotImg from '../assets/images/mascot_gida_character_1788099455313.jpg';
+import mascotImg from '../assets/images/logo.jpg';
 
 const MASCOT_QUOTES = [
   "You caught me! ⚡",

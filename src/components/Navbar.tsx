@@ -1,7 +1,8 @@
 import React from 'react';
 import { PageMode } from '../types';
 import { soundEngine } from '../utils/soundEngine';
-import { ArrowRight, Sparkles, Globe, Palette, Mail } from 'lucide-react';
+import { ArrowRight, Globe, Palette, Mail } from 'lucide-react';
+import brandLogo from '../assets/images/logo.jpg';
 
 interface NavbarProps {
   currentPage: PageMode;
@@ -22,11 +23,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <nav className="sticky top-0 z-40 bg-[#0B2E1A]/90 backdrop-blur-md border-b border-[#F5F3E8]/8 transition-colors">
       <div className="max-w-[1080px] mx-auto px-6 py-4 flex items-center justify-between gap-4">
-        {/* Brand */}
+        {/* Brand with Character Logo */}
         <div className="flex items-center gap-3">
-          <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-[#14532D] border border-[#B7F34A]/30 text-[#B7F34A] font-bold text-sm shadow-inner">
-            <span>D</span>
-            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-[#B7F34A] animate-pulse" />
+          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl overflow-hidden border-2 border-[#B7F34A]/60 bg-[#14532D] shadow-md shadow-[#B7F34A]/10 group cursor-pointer hover:border-[#B7F34A] transition-all">
+            <img
+              src={brandLogo}
+              alt="Drapevangelist Logo"
+              className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-300"
+              referrerPolicy="no-referrer"
+            />
+            <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#B7F34A] border-2 border-[#0B2E1A] animate-pulse" />
           </div>
           <div className="flex flex-col">
             <span className="font-display font-bold text-lg tracking-tight text-[#F5F3E8]">

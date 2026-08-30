@@ -70,8 +70,8 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
                 <Music className="h-6 w-6 animate-pulse" />
               </div>
               <div>
-                <div className="text-xs font-bold text-[#B7F34A] uppercase tracking-wider">Demo Instrumentals</div>
-                <div className="text-sm font-semibold text-[#F5F3E8]">Drapevangelist Soundscape Loop</div>
+                <div className="text-xs font-bold text-[#B7F34A] uppercase tracking-wider">Original Single</div>
+                <div className="text-sm font-semibold text-[#F5F3E8]">"Gonna Be Better" — Drapevangelist</div>
               </div>
             </div>
             <button
@@ -79,10 +79,10 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
                 soundEngine.toggle();
                 soundEngine.playClick();
               }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#B7F34A] text-[#0B2E1A] text-xs font-bold hover:bg-[#CFFF6E] transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#B7F34A] text-[#0B2E1A] text-xs font-bold hover:bg-[#CFFF6E] transition-all cursor-pointer shadow-md"
             >
               <Volume2 className="h-4 w-4" />
-              Toggle Instrumental
+              Play / Pause Track
             </button>
           </div>
         )}

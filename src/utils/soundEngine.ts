@@ -1,15 +1,45 @@
-// Web Audio API procedural Lo-Fi Instrumental Sound Engine
-// Emulates a smooth jazz-hop / boom-bap instrumental loop with Rhodes chords, sub bass, drum groove & vinyl warmth.
+// Audio Engine for Drapevangelist Portfolio
+// Pure HTML5 Audio player with IndexedDB caching and UI sound effects
+
+const DB_NAME = 'DrapevangelistAudioDB';
+const STORE_NAME = 'tracks';
+const TRACK_KEY = 'original_track';
+
+export interface TrackMeta {
+  title: string;
+  artist: string;
+  duration: number;
+  fileName?: string;
+  hasAudioSource: boolean;
+}
 
 class SoundEngine {
   private ctx: AudioContext | null = null;
-  private isPlaying = false;
-  private volume = 0.4;
-  private loopInterval: number | null = null;
-  private step = 0;
-  private listeners: ((playing: boolean) => void)[] = [];
-  private vinylNode: AudioBufferSourceNode | null = null;
   private masterGain: GainNode | null = null;
+  private audioElement: HTMLAudioElement | null = null;
+  
+  private isPlaying = false;
+  private volume = 0.7;
+  private currentTime = 0;
+  private duration = 211; // 3:31 default track length
+  private trackMeta: TrackMeta = {
+    title: 'Gonna Be Better',
+    artist: 'Drapevangelist (Developer Evangelist)',
+    duration: 211,
+    hasAudioSource: false,
+  };
+
+  private listeners: ((playing: boolean) => void)[] = [];
+  private timeListeners: ((time: number, duration: number) => void)[] = [];
+  private metaListeners: ((meta: TrackMeta) => void)[] = [];
+  private requestUploadListeners: (() => void)[] = [];
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      this.initAudioElement();
+      this.loadSavedTrackFromIndexedDB();
+    }
+  }
 
   private initContext() {
     if (!this.ctx) {
@@ -24,6 +54,154 @@ class SoundEngine {
     }
   }
 
+  private initAudioElement() {
+    if (this.audioElement) return;
+
+    this.audioElement = new Audio();
+    this.audioElement.preload = 'auto';
+    this.audioElement.volume = this.volume;
+    this.audioElement.loop = true;
+
+    // Check default public audio track paths
+    const candidates = ['/audio/track.mp3', '/audio/gonna-be-better.mp3', '/track.mp3'];
+    this.audioElement.src = candidates[0];
+
+    this.audioElement.addEventListener('timeupdate', () => {
+      if (this.audioElement) {
+        this.currentTime = this.audioElement.currentTime;
+        if (this.audioElement.duration && !isNaN(this.audioElement.duration)) {
+          this.duration = this.audioElement.duration;
+        }
+        this.notifyTime();
+      }
+    });
+
+    this.audioElement.addEventListener('loadedmetadata', () => {
+      if (this.audioElement) {
+        if (this.audioElement.duration && !isNaN(this.audioElement.duration)) {
+          this.duration = this.audioElement.duration;
+        }
+        this.trackMeta = {
+          ...this.trackMeta,
+          duration: this.duration,
+          hasAudioSource: true,
+        };
+        this.notifyMeta();
+      }
+    });
+
+    this.audioElement.addEventListener('canplay', () => {
+      this.trackMeta = {
+        ...this.trackMeta,
+        hasAudioSource: true,
+      };
+      this.notifyMeta();
+    });
+
+    this.audioElement.addEventListener('play', () => {
+      this.isPlaying = true;
+      this.notify();
+    });
+
+    this.audioElement.addEventListener('pause', () => {
+      this.isPlaying = false;
+      this.notify();
+    });
+
+    this.audioElement.addEventListener('error', () => {
+      // Audio source not yet loaded
+      if (!this.trackMeta.hasAudioSource) {
+        this.isPlaying = false;
+        this.notify();
+      }
+    });
+  }
+
+  // IndexedDB Storage to persist uploaded song in browser across refreshes
+  private async getDB(): Promise<IDBDatabase> {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME);
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  private async loadSavedTrackFromIndexedDB() {
+    try {
+      const db = await this.getDB();
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.get(TRACK_KEY);
+
+      req.onsuccess = () => {
+        const item = req.result as { blob: Blob; meta: TrackMeta } | undefined;
+        if (item && item.blob) {
+          const url = URL.createObjectURL(item.blob);
+          if (this.audioElement) {
+            this.audioElement.src = url;
+            this.trackMeta = {
+              ...item.meta,
+              hasAudioSource: true,
+            };
+            this.notifyMeta();
+          }
+        }
+      };
+    } catch {
+      // IndexedDB fallback
+    }
+  }
+
+  public async setAudioFile(file: File | Blob, customTitle?: string, customArtist?: string) {
+    const url = URL.createObjectURL(file);
+    if (!this.audioElement) {
+      this.initAudioElement();
+    }
+    if (this.audioElement) {
+      this.audioElement.src = url;
+      this.audioElement.load();
+
+      const meta: TrackMeta = {
+        title: customTitle || (file instanceof File ? file.name.replace(/\.[^/.]+$/, '') : 'Gonna Be Better'),
+        artist: customArtist || 'Drapevangelist (Developer Evangelist)',
+        duration: 211,
+        fileName: file instanceof File ? file.name : 'gonna-be-better.mp3',
+        hasAudioSource: true,
+      };
+      this.trackMeta = meta;
+      this.notifyMeta();
+
+      // Save to IndexedDB
+      try {
+        const db = await this.getDB();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        store.put({ blob: file, meta }, TRACK_KEY);
+      } catch {
+        // storage ignored
+      }
+
+      this.audioElement.play().catch(() => {});
+    }
+  }
+
+  public onRequestUpload(fn: () => void) {
+    this.requestUploadListeners.push(fn);
+    return () => {
+      this.requestUploadListeners = this.requestUploadListeners.filter(l => l !== fn);
+    };
+  }
+
+  public triggerUploadRequest() {
+    this.requestUploadListeners.forEach(fn => fn());
+  }
+
   public subscribe(fn: (playing: boolean) => void) {
     this.listeners.push(fn);
     return () => {
@@ -31,8 +209,30 @@ class SoundEngine {
     };
   }
 
+  public subscribeTime(fn: (time: number, duration: number) => void) {
+    this.timeListeners.push(fn);
+    return () => {
+      this.timeListeners = this.timeListeners.filter(l => l !== fn);
+    };
+  }
+
+  public subscribeMeta(fn: (meta: TrackMeta) => void) {
+    this.metaListeners.push(fn);
+    return () => {
+      this.metaListeners = this.metaListeners.filter(l => l !== fn);
+    };
+  }
+
   private notify() {
     this.listeners.forEach(fn => fn(this.isPlaying));
+  }
+
+  private notifyTime() {
+    this.timeListeners.forEach(fn => fn(this.currentTime, this.duration));
+  }
+
+  private notifyMeta() {
+    this.metaListeners.forEach(fn => fn(this.trackMeta));
   }
 
   public getIsPlaying() {
@@ -43,248 +243,34 @@ class SoundEngine {
     return this.volume;
   }
 
+  public getTrackMeta(): TrackMeta {
+    return this.trackMeta;
+  }
+
+  public getCurrentTime() {
+    return this.currentTime;
+  }
+
+  public getDuration() {
+    return this.duration;
+  }
+
   public setVolume(val: number) {
     this.volume = Math.max(0, Math.min(1, val));
+    if (this.audioElement) {
+      this.audioElement.volume = this.volume;
+    }
     if (this.masterGain && this.ctx) {
       this.masterGain.gain.setTargetAtTime(this.volume, this.ctx.currentTime, 0.05);
     }
   }
 
-  // Create vinyl crackle noise
-  private startVinylNoise() {
-    if (!this.ctx || !this.masterGain) return;
-    const bufferSize = this.ctx.sampleRate * 2;
-    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-
-    for (let i = 0; i < bufferSize; i++) {
-      // White noise with random pops
-      const pop = Math.random() > 0.999 ? (Math.random() - 0.5) * 0.4 : 0;
-      data[i] = (Math.random() * 2 - 1) * 0.015 + pop;
+  public seek(seconds: number) {
+    if (this.audioElement && isFinite(seconds)) {
+      this.audioElement.currentTime = Math.max(0, Math.min(this.duration, seconds));
+      this.currentTime = this.audioElement.currentTime;
+      this.notifyTime();
     }
-
-    const noise = this.ctx.createBufferSource();
-    noise.buffer = buffer;
-    noise.loop = true;
-
-    // Filter to warm lo-fi tape frequencies
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.value = 1400;
-    filter.Q.value = 0.8;
-
-    const noiseGain = this.ctx.createGain();
-    noiseGain.gain.value = 0.12;
-
-    noise.connect(filter);
-    filter.connect(noiseGain);
-    noiseGain.connect(this.masterGain);
-    noise.start();
-    this.vinylNode = noise;
-  }
-
-  private stopVinylNoise() {
-    if (this.vinylNode) {
-      try {
-        this.vinylNode.stop();
-        this.vinylNode.disconnect();
-      } catch {
-        // ignore if already stopped
-      }
-      this.vinylNode = null;
-    }
-  }
-
-  // Synthesize a mellow Rhodes chord
-  private playRhodesChord(freqs: number[], duration = 1.2) {
-    if (!this.ctx || !this.masterGain) return;
-    const now = this.ctx.currentTime;
-
-    freqs.forEach((freq) => {
-      if (!this.ctx || !this.masterGain) return;
-      const osc = this.ctx.createOscillator();
-      const osc2 = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      const filter = this.ctx.createBiquadFilter();
-
-      // Sine + Triangle harmonic richness
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, now);
-
-      osc2.type = 'triangle';
-      osc2.frequency.setValueAtTime(freq * 2, now); // soft octave harmonic
-
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(1200, now);
-      filter.frequency.exponentialRampToValueAtTime(300, now + duration);
-
-      gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(0.08, now + 0.04);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-
-      osc.connect(filter);
-      osc2.connect(filter);
-      filter.connect(gain);
-      gain.connect(this.masterGain);
-
-      osc.start(now);
-      osc2.start(now);
-      osc.stop(now + duration);
-      osc2.stop(now + duration);
-    });
-  }
-
-  // Synthesize Boom-Bap Kick Drum
-  private playKick() {
-    if (!this.ctx || !this.masterGain) return;
-    const now = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(140, now);
-    osc.frequency.exponentialRampToValueAtTime(45, now + 0.12);
-
-    gain.gain.setValueAtTime(0.4, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-
-    osc.start(now);
-    osc.stop(now + 0.25);
-  }
-
-  // Synthesize Lo-Fi Snare
-  private playSnare() {
-    if (!this.ctx || !this.masterGain) return;
-    const now = this.ctx.currentTime;
-
-    // Tone body
-    const osc = this.ctx.createOscillator();
-    const oscGain = this.ctx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(180, now);
-    osc.frequency.exponentialRampToValueAtTime(80, now + 0.1);
-    oscGain.gain.setValueAtTime(0.2, now);
-    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-    osc.connect(oscGain);
-    oscGain.connect(this.masterGain);
-    osc.start(now);
-    osc.stop(now + 0.12);
-
-    // Noise snap
-    const bufferSize = this.ctx.sampleRate * 0.15;
-    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2 - 1);
-    }
-    const noise = this.ctx.createBufferSource();
-    noise.buffer = buffer;
-
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'highpass';
-    filter.frequency.value = 1000;
-
-    const noiseGain = this.ctx.createGain();
-    noiseGain.gain.setValueAtTime(0.18, now);
-    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-
-    noise.connect(filter);
-    filter.connect(noiseGain);
-    noiseGain.connect(this.masterGain);
-    noise.start(now);
-  }
-
-  // Synthesize Closed Hi-Hat
-  private playHiHat(accent = false) {
-    if (!this.ctx || !this.masterGain) return;
-    const now = this.ctx.currentTime;
-    const bufferSize = this.ctx.sampleRate * 0.05;
-    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
-    const noise = this.ctx.createBufferSource();
-    noise.buffer = buffer;
-
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.value = 8500;
-    filter.Q.value = 3.5;
-
-    const gain = this.ctx.createGain();
-    const volume = accent ? 0.09 : 0.045;
-    gain.gain.setValueAtTime(volume, now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
-
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.masterGain);
-    noise.start(now);
-  }
-
-  // Synthesize Warm Sub Bass
-  private playBass(freq: number, duration = 0.5) {
-    if (!this.ctx || !this.masterGain) return;
-    const now = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(freq, now);
-
-    gain.gain.setValueAtTime(0.001, now);
-    gain.gain.linearRampToValueAtTime(0.25, now + 0.03);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-
-    osc.start(now);
-    osc.stop(now + duration);
-  }
-
-  // Chord Progressions (Neo-soul / Lo-Fi jazz chords: Dm9 - G13 - Cmaj9 - Am9)
-  private chords = [
-    [293.66, 349.23, 440.00, 523.25, 659.25], // Dm9
-    [196.00, 329.63, 392.00, 493.88, 587.33], // G13
-    [261.63, 329.63, 392.00, 493.88, 587.33], // Cmaj9
-    [220.00, 261.63, 329.63, 392.00, 493.88], // Am9
-  ];
-
-  private bassNotes = [73.42, 49.00, 65.41, 55.00]; // D1, G0, C1, A0
-
-  // 16-step sequencer tick (approx 84 BPM -> step is ~178ms)
-  private tick() {
-    const stepInBar = this.step % 16;
-    const barIndex = Math.floor((this.step % 64) / 16);
-
-    // Chords on step 0 and step 8
-    if (stepInBar === 0) {
-      this.playRhodesChord(this.chords[barIndex], 2.2);
-      this.playBass(this.bassNotes[barIndex], 1.2);
-    } else if (stepInBar === 8) {
-      this.playBass(this.bassNotes[barIndex], 0.8);
-    }
-
-    // Drum sequence:
-    // Kick: 0, 6, 10
-    if (stepInBar === 0 || stepInBar === 6 || stepInBar === 10) {
-      this.playKick();
-    }
-    // Snare: 4, 12
-    if (stepInBar === 4 || stepInBar === 12) {
-      this.playSnare();
-    }
-    // Hi-hats: every even step with swing accents
-    if (stepInBar % 2 === 0) {
-      this.playHiHat(stepInBar % 4 === 2);
-    }
-
-    this.step++;
   }
 
   public toggle(): boolean {
@@ -298,30 +284,32 @@ class SoundEngine {
 
   public play() {
     this.initContext();
-    if (this.isPlaying) return;
 
-    this.isPlaying = true;
-    this.startVinylNoise();
-
-    // 84 BPM -> quarter note is 714ms -> 16th note is ~178.5ms
-    const stepTime = 178.5;
-    this.step = 0;
-    this.tick(); // instant initial note
-    this.loopInterval = window.setInterval(() => {
-      this.tick();
-    }, stepTime);
-
-    this.notify();
+    if (this.audioElement) {
+      const playPromise = this.audioElement.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            this.isPlaying = true;
+            this.notify();
+          })
+          .catch(() => {
+            // Audio file needs user selection or interaction
+            this.isPlaying = false;
+            this.notify();
+            this.triggerUploadRequest();
+          });
+      }
+    } else {
+      this.triggerUploadRequest();
+    }
   }
 
   public pause() {
-    if (!this.isPlaying) return;
     this.isPlaying = false;
-    if (this.loopInterval !== null) {
-      clearInterval(this.loopInterval);
-      this.loopInterval = null;
+    if (this.audioElement) {
+      this.audioElement.pause();
     }
-    this.stopVinylNoise();
     this.notify();
   }
 
@@ -370,7 +358,7 @@ class SoundEngine {
     this.initContext();
     if (!this.ctx || !this.masterGain) return;
     const now = this.ctx.currentTime;
-    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 arpeggio
+    const notes = [523.25, 659.25, 783.99, 1046.50];
 
     notes.forEach((freq, i) => {
       if (!this.ctx || !this.masterGain) return;
