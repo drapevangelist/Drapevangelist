@@ -1,0 +1,6 @@
+{
+  "name": "Drapevangelist — Portfolio",
+  "description": "Portfolio of Drapevangelist: Web3 Community Operations Manager, content writer, IRL event coordinator, and creative recording artist.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
