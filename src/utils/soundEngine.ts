@@ -1,5 +1,5 @@
 // Audio Engine for Drapevangelist Portfolio
-// Pure HTML5 Audio player with IndexedDB caching and UI sound effects
+// Pure HTML5 Audio player with intelligent candidate detection, IndexedDB caching, and UI sound effects
 
 const DB_NAME = 'DrapevangelistAudioDB';
 const STORE_NAME = 'tracks';
@@ -11,6 +11,7 @@ export interface TrackMeta {
   duration: number;
   fileName?: string;
   hasAudioSource: boolean;
+  resolvedSourceUrl?: string;
 }
 
 class SoundEngine {
@@ -19,7 +20,7 @@ class SoundEngine {
   private audioElement: HTMLAudioElement | null = null;
   
   private isPlaying = false;
-  private volume = 0.7;
+  private volume = 0.75;
   private currentTime = 0;
   private duration = 211; // 3:31 default track length
   private trackMeta: TrackMeta = {
@@ -29,6 +30,8 @@ class SoundEngine {
     hasAudioSource: false,
   };
 
+  private isProbing = false;
+  private hasResolvedSource = false;
   private listeners: ((playing: boolean) => void)[] = [];
   private timeListeners: ((time: number, duration: number) => void)[] = [];
   private metaListeners: ((meta: TrackMeta) => void)[] = [];
@@ -37,7 +40,11 @@ class SoundEngine {
   constructor() {
     if (typeof window !== 'undefined') {
       this.initAudioElement();
-      this.loadSavedTrackFromIndexedDB();
+      this.loadSavedTrackFromIndexedDB().then((foundInDb) => {
+        if (!foundInDb) {
+          this.probeAndResolveAudioSource();
+        }
+      });
     }
   }
 
@@ -54,6 +61,185 @@ class SoundEngine {
     }
   }
 
+  // Generate exhaustive combinations of potential track names and paths
+  private getCandidateUrls(): string[] {
+    const envUrl = (import.meta as unknown as { env?: { VITE_AUDIO_URL?: string } })?.env?.VITE_AUDIO_URL;
+    
+    const prefixes = ['/audio/', '/', '/assets/', '/assets/audio/', '/public/audio/', '/public/'];
+    const names = [
+      'Be better',
+      'Be Better',
+      'be better',
+      'be-better',
+      'Be-Better',
+      'be_better',
+      'Be_Better',
+      'track',
+      'Track',
+      'TRACK',
+      'gonna-be-better',
+      'Gonna-Be-Better',
+      'Gonna-be-better',
+      'gonna_be_better',
+      'Gonna_Be_Better',
+      'Gonna Be Better',
+      'gonna be better',
+      'Drapevangelist - Gonna Be Better',
+      'Drapevangelist - Be Better',
+      'Drapevangelist-Gonna-Be-Better',
+      'Drapevangelist - Gonna Be Better (Developer Evangelist)',
+      'drapevangelist',
+      'Drapevangelist',
+      'developer-evangelist',
+      'Developer-Evangelist',
+      'Developer Evangelist',
+      'song',
+      'Song',
+      'audio',
+      'Audio',
+      'music',
+      'Music',
+      'beat',
+      'Joey Made This Beat',
+      'joey-made-this-beat',
+    ];
+    const extensions = ['.mp3', '.MP3', '.wav', '.WAV', '.m4a', '.M4A', '.aac', '.ogg'];
+
+    const generated: string[] = [];
+
+    if (envUrl && envUrl.trim().length > 0) {
+      generated.push(envUrl.trim());
+    }
+
+    // High priority explicit paths for Be better.m4a and variations
+    generated.push('/audio/Be better.m4a');
+    generated.push('/audio/Be%20better.m4a');
+    generated.push('/audio/Be Better.m4a');
+    generated.push('/audio/Be%20Better.m4a');
+    generated.push('/audio/be-better.m4a');
+    generated.push('/audio/Be-Better.m4a');
+    generated.push('/audio/be_better.m4a');
+    generated.push('/audio/Be_Better.m4a');
+    generated.push('/audio/be better.m4a');
+    generated.push('/audio/be%20better.m4a');
+    generated.push('/Be better.m4a');
+    generated.push('/Be%20better.m4a');
+    generated.push('/Be Better.m4a');
+    generated.push('/Be%20Better.m4a');
+    generated.push('/be-better.m4a');
+    generated.push('/Be-Better.m4a');
+    generated.push('/be_better.m4a');
+    generated.push('/be better.m4a');
+    generated.push('/assets/Be better.m4a');
+    generated.push('/assets/audio/Be better.m4a');
+
+    // Also support mp3/wav versions of Be better
+    generated.push('/audio/Be better.mp3');
+    generated.push('/audio/Be Better.mp3');
+    generated.push('/audio/be-better.mp3');
+    generated.push('/Be better.mp3');
+    generated.push('/Be Better.mp3');
+    generated.push('/be-better.mp3');
+
+    // Standard track/gonna-be-better aliases
+    generated.push('/audio/track.m4a');
+    generated.push('/audio/track.mp3');
+    generated.push('/track.m4a');
+    generated.push('/track.mp3');
+    generated.push('/audio/gonna-be-better.m4a');
+    generated.push('/audio/gonna-be-better.mp3');
+    generated.push('/gonna-be-better.m4a');
+    generated.push('/gonna-be-better.mp3');
+    generated.push('/audio/Gonna-Be-Better.m4a');
+    generated.push('/audio/Gonna-Be-Better.mp3');
+    generated.push('/audio/Gonna Be Better.m4a');
+    generated.push('/audio/Gonna Be Better.mp3');
+    generated.push('/Gonna-Be-Better.m4a');
+    generated.push('/Gonna-Be-Better.mp3');
+    generated.push('/Gonna Be Better.m4a');
+    generated.push('/Gonna Be Better.mp3');
+
+    for (const prefix of prefixes) {
+      for (const name of names) {
+        for (const ext of extensions) {
+          const raw = `${prefix}${name}${ext}`;
+          const encoded = encodeURI(raw);
+          if (!generated.includes(raw)) generated.push(raw);
+          if (encoded !== raw && !generated.includes(encoded)) generated.push(encoded);
+        }
+      }
+    }
+
+    return generated;
+  }
+
+  // Probe candidates to find a valid audio URL that doesn't return 404 HTML fallback
+  public async probeAndResolveAudioSource(): Promise<string | null> {
+    if (this.hasResolvedSource && this.trackMeta.resolvedSourceUrl) {
+      return this.trackMeta.resolvedSourceUrl;
+    }
+    if (this.isProbing) return null;
+    this.isProbing = true;
+
+    const candidates = this.getCandidateUrls();
+
+    for (const candidate of candidates) {
+      try {
+        const res = await fetch(candidate, { method: 'HEAD', cache: 'no-cache' });
+        const contentType = res.headers.get('content-type') || '';
+        
+        // Ensure the response is OK and is an actual audio / media stream, not HTML from SPA 404 fallback
+        if (res.ok && !contentType.includes('text/html')) {
+          this.applyAudioSource(candidate);
+          this.isProbing = false;
+          return candidate;
+        }
+      } catch {
+        // Continue checking candidates
+      }
+    }
+
+    // If HEAD is blocked by CORS/server, test with standard GET range check on top candidates
+    const topCandidates = candidates.slice(0, 12);
+    for (const candidate of topCandidates) {
+      try {
+        const res = await fetch(candidate, { 
+          method: 'GET', 
+          headers: { Range: 'bytes=0-10' }, 
+          cache: 'no-cache' 
+        });
+        const contentType = res.headers.get('content-type') || '';
+        if (res.ok && !contentType.includes('text/html')) {
+          this.applyAudioSource(candidate);
+          this.isProbing = false;
+          return candidate;
+        }
+      } catch {
+        // Continue
+      }
+    }
+
+    this.isProbing = false;
+    return null;
+  }
+
+  private applyAudioSource(url: string) {
+    if (!this.audioElement) {
+      this.initAudioElement();
+    }
+    if (this.audioElement) {
+      this.audioElement.src = url;
+      this.audioElement.load();
+      this.hasResolvedSource = true;
+      this.trackMeta = {
+        ...this.trackMeta,
+        hasAudioSource: true,
+        resolvedSourceUrl: url,
+      };
+      this.notifyMeta();
+    }
+  }
+
   private initAudioElement() {
     if (this.audioElement) return;
 
@@ -62,46 +248,13 @@ class SoundEngine {
     this.audioElement.volume = this.volume;
     this.audioElement.loop = true;
 
-    // Check audio track paths: env variable or static public files
-    const envUrl = (import.meta as unknown as { env?: { VITE_AUDIO_URL?: string } })?.env?.VITE_AUDIO_URL;
-    const candidates = [
-      ...(envUrl ? [envUrl] : []),
-      '/audio/track.mp3',
-      '/audio/track.wav',
-      '/audio/track.m4a',
-      '/audio/gonna-be-better.mp3',
-      '/audio/Gonna-Be-Better.mp3',
-      '/audio/Gonna Be Better.mp3',
-      '/audio/audio.mp3',
-      '/audio/song.mp3',
-      '/track.mp3',
-      '/track.wav',
-      '/track.m4a',
-      '/gonna-be-better.mp3',
-      '/Gonna-Be-Better.mp3',
-      '/Gonna Be Better.mp3',
-    ];
-    let candidateIndex = 0;
-    this.audioElement.src = candidates[0];
-
-    this.audioElement.addEventListener('error', () => {
-      if (candidateIndex < candidates.length - 1) {
-        candidateIndex++;
-        if (this.audioElement) {
-          this.audioElement.src = candidates[candidateIndex];
-          this.audioElement.load();
-        }
-      } else {
-        // All static candidates checked
-        this.isPlaying = false;
-        this.notify();
-      }
-    });
+    // Default to Be better.m4a path
+    this.audioElement.src = '/audio/Be%20better.m4a';
 
     this.audioElement.addEventListener('timeupdate', () => {
       if (this.audioElement) {
         this.currentTime = this.audioElement.currentTime;
-        if (this.audioElement.duration && !isNaN(this.audioElement.duration)) {
+        if (this.audioElement.duration && !isNaN(this.audioElement.duration) && isFinite(this.audioElement.duration)) {
           this.duration = this.audioElement.duration;
         }
         this.notifyTime();
@@ -110,7 +263,7 @@ class SoundEngine {
 
     this.audioElement.addEventListener('loadedmetadata', () => {
       if (this.audioElement) {
-        if (this.audioElement.duration && !isNaN(this.audioElement.duration)) {
+        if (this.audioElement.duration && !isNaN(this.audioElement.duration) && isFinite(this.audioElement.duration)) {
           this.duration = this.audioElement.duration;
         }
         this.trackMeta = {
@@ -156,30 +309,37 @@ class SoundEngine {
     });
   }
 
-  private async loadSavedTrackFromIndexedDB() {
-    try {
-      const db = await this.getDB();
-      const tx = db.transaction(STORE_NAME, 'readonly');
-      const store = tx.objectStore(STORE_NAME);
-      const req = store.get(TRACK_KEY);
+  private async loadSavedTrackFromIndexedDB(): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.getDB()
+        .then((db) => {
+          const tx = db.transaction(STORE_NAME, 'readonly');
+          const store = tx.objectStore(STORE_NAME);
+          const req = store.get(TRACK_KEY);
 
-      req.onsuccess = () => {
-        const item = req.result as { blob: Blob; meta: TrackMeta } | undefined;
-        if (item && item.blob) {
-          const url = URL.createObjectURL(item.blob);
-          if (this.audioElement) {
-            this.audioElement.src = url;
-            this.trackMeta = {
-              ...item.meta,
-              hasAudioSource: true,
-            };
-            this.notifyMeta();
-          }
-        }
-      };
-    } catch {
-      // IndexedDB fallback
-    }
+          req.onsuccess = () => {
+            const item = req.result as { blob: Blob; meta: TrackMeta } | undefined;
+            if (item && item.blob) {
+              const url = URL.createObjectURL(item.blob);
+              if (this.audioElement) {
+                this.audioElement.src = url;
+                this.trackMeta = {
+                  ...item.meta,
+                  hasAudioSource: true,
+                  resolvedSourceUrl: url,
+                };
+                this.hasResolvedSource = true;
+                this.notifyMeta();
+                resolve(true);
+                return;
+              }
+            }
+            resolve(false);
+          };
+          req.onerror = () => resolve(false);
+        })
+        .catch(() => resolve(false));
+    });
   }
 
   public async setAudioFile(file: File | Blob, customTitle?: string, customArtist?: string) {
@@ -197,8 +357,11 @@ class SoundEngine {
         duration: 211,
         fileName: file instanceof File ? file.name : 'gonna-be-better.mp3',
         hasAudioSource: true,
+        resolvedSourceUrl: url,
       };
+
       this.trackMeta = meta;
+      this.hasResolvedSource = true;
       this.notifyMeta();
 
       // Save to IndexedDB
@@ -297,32 +460,54 @@ class SoundEngine {
     }
   }
 
-  public toggle(): boolean {
+  public async toggle(): Promise<boolean> {
     if (this.isPlaying) {
       this.pause();
+      return false;
     } else {
-      this.play();
+      return this.play();
     }
-    return this.isPlaying;
   }
 
-  public play() {
+  public async play(): Promise<boolean> {
     this.initContext();
 
+    if (!this.audioElement) {
+      this.initAudioElement();
+    }
+
+    // If we haven't resolved an audio source yet, try resolving now
+    if (!this.hasResolvedSource) {
+      await this.probeAndResolveAudioSource();
+    }
+
     if (this.audioElement) {
-      const playPromise = this.audioElement.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
+      try {
+        await this.audioElement.play();
+        this.isPlaying = true;
+        this.notify();
+        return true;
+      } catch {
+        // If initial play failed on current src, try next candidate
+        const resolved = await this.probeAndResolveAudioSource();
+        if (resolved && this.audioElement) {
+          try {
+            await this.audioElement.play();
             this.isPlaying = true;
             this.notify();
-          })
-          .catch(() => {
+            return true;
+          } catch {
             this.isPlaying = false;
             this.notify();
-          });
+            return false;
+          }
+        }
+        this.isPlaying = false;
+        this.notify();
+        return false;
       }
     }
+    return false;
   }
 
   public pause() {
@@ -401,3 +586,4 @@ class SoundEngine {
 }
 
 export const soundEngine = new SoundEngine();
+
