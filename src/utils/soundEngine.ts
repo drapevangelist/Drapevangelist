@@ -23,15 +23,18 @@ class SoundEngine {
   private volume = 0.75;
   private currentTime = 0;
   private duration = 211; // 3:31 default track length
+  private userExplicitlyPaused = false;
+  private autoStartInitialized = false;
   private trackMeta: TrackMeta = {
     title: 'Gonna Be Better',
-    artist: 'Drapevangelist (Developer Evangelist)',
+    artist: 'Drapevangelist',
     duration: 211,
-    hasAudioSource: false,
+    hasAudioSource: true,
+    resolvedSourceUrl: '/audio/Be%20better.m4a',
   };
 
   private isProbing = false;
-  private hasResolvedSource = false;
+  private hasResolvedSource = true;
   private listeners: ((playing: boolean) => void)[] = [];
   private timeListeners: ((time: number, duration: number) => void)[] = [];
   private metaListeners: ((meta: TrackMeta) => void)[] = [];
@@ -465,6 +468,7 @@ class SoundEngine {
       this.pause();
       return false;
     } else {
+      this.userExplicitlyPaused = false;
       return this.play();
     }
   }
@@ -476,46 +480,74 @@ class SoundEngine {
       this.initAudioElement();
     }
 
-    // If we haven't resolved an audio source yet, try resolving now
-    if (!this.hasResolvedSource) {
-      await this.probeAndResolveAudioSource();
-    }
+    if (!this.audioElement) return false;
 
-    if (this.audioElement) {
-      try {
-        await this.audioElement.play();
-        this.isPlaying = true;
-        this.notify();
-        return true;
-      } catch {
-        // If initial play failed on current src, try next candidate
-        const resolved = await this.probeAndResolveAudioSource();
-        if (resolved && this.audioElement) {
-          try {
-            await this.audioElement.play();
-            this.isPlaying = true;
-            this.notify();
-            return true;
-          } catch {
-            this.isPlaying = false;
-            this.notify();
-            return false;
-          }
+    try {
+      await this.audioElement.play();
+      this.isPlaying = true;
+      this.userExplicitlyPaused = false;
+      this.notify();
+      return true;
+    } catch {
+      // If direct play failed on current src, probe candidates as fallback
+      const resolved = await this.probeAndResolveAudioSource();
+      if (resolved && this.audioElement && this.audioElement.src !== resolved) {
+        try {
+          this.audioElement.src = resolved;
+          await this.audioElement.play();
+          this.isPlaying = true;
+          this.userExplicitlyPaused = false;
+          this.notify();
+          return true;
+        } catch {
+          this.isPlaying = false;
+          this.notify();
+          return false;
         }
-        this.isPlaying = false;
-        this.notify();
-        return false;
       }
+      this.isPlaying = false;
+      this.notify();
+      return false;
     }
-    return false;
   }
 
   public pause() {
     this.isPlaying = false;
+    this.userExplicitlyPaused = true;
     if (this.audioElement) {
       this.audioElement.pause();
     }
     this.notify();
+  }
+
+  public autoStart() {
+    if (this.isPlaying) return;
+
+    // 1. Immediately try playing on load
+    this.play().then((started) => {
+      if (started) return;
+
+      // 2. If browser autoplay policy required a user gesture, register one-time gesture listeners
+      const onUserGesture = () => {
+        if (!this.userExplicitlyPaused && !this.isPlaying) {
+          this.play().catch(() => {});
+        }
+        cleanupListeners();
+      };
+
+      const events = ['click', 'pointerdown', 'touchstart', 'touchend', 'keydown', 'scroll'];
+      const cleanupListeners = () => {
+        events.forEach((evt) => {
+          window.removeEventListener(evt, onUserGesture, { capture: true });
+          document.removeEventListener(evt, onUserGesture, { capture: true });
+        });
+      };
+
+      events.forEach((evt) => {
+        window.addEventListener(evt, onUserGesture, { capture: true, once: true, passive: true });
+        document.addEventListener(evt, onUserGesture, { capture: true, once: true, passive: true });
+      });
+    }).catch(() => {});
   }
 
   // Micro Sound Effects

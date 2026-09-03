@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageMode, ProjectItem } from './types';
+import { soundEngine } from './utils/soundEngine';
 import { Preloader } from './components/Preloader';
 import { Navbar } from './components/Navbar';
-import { Mascot } from './components/Mascot';
 import { AudioToggle } from './components/AudioToggle';
 import { Web3View } from './components/Web3View';
 import { Web2View } from './components/Web2View';
@@ -15,6 +15,11 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<PageMode>('web3');
   const [selectedProject, setSelectedProject] = useState<ProjectItem | null>(null);
 
+  useEffect(() => {
+    // Autostart music on page load
+    soundEngine.autoStart();
+  }, []);
+
   const scrollToContact = () => {
     const el = document.getElementById('contact');
     if (el) {
@@ -26,9 +31,6 @@ export default function App() {
     <div className="min-h-screen bg-[#0B2E1A] text-[#F5F3E8] relative flex flex-col font-sans selection:bg-[#B7F34A] selection:text-[#0B2E1A]">
       {/* 0-100% Preloader on first load */}
       {!isLoaded && <Preloader onComplete={() => setIsLoaded(true)} />}
-
-      {/* Interactive Hide-and-Seek Mascot */}
-      <Mascot />
 
       {/* Sticky Top Navigation with dual-mode switch */}
       <Navbar

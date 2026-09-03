@@ -15,6 +15,33 @@ export interface ProjectItem {
   stats?: { label: string; value: string }[];
 }
 
+export type ProofOfWorkCategory = 
+  | 'all'
+  | 'professional'
+  | 'ambassador'
+  | 'beta-testing'
+  | 'community'
+  | 'project'
+  | 'marketing';
+
+export interface ProofOfWorkItem {
+  id: string;
+  name: string;
+  role: string;
+  category: 'professional' | 'ambassador' | 'beta-testing' | 'community' | 'project' | 'marketing';
+  categoryLabel: string;
+  period?: string;
+  responsibilities?: string[];
+  achievement?: string;
+  additional?: string;
+  focus?: string;
+  technology?: string;
+  meaning?: string;
+  contributions?: string[];
+  status: 'CONFIRMED' | 'VERIFIED' | 'COMPLETED';
+  link?: string;
+}
+
 export interface StatItem {
   num: string;
   numericVal: number;

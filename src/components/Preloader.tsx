@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { soundEngine } from '../utils/soundEngine';
 
 interface PreloaderProps {
   onComplete: () => void;
@@ -9,11 +10,15 @@ export const Preloader: React.FC<PreloaderProps> = ({ onComplete }) => {
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
+    // Attempt audio start immediately
+    soundEngine.autoStart();
+
     // Check reduced motion preference
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) {
       setPercent(100);
       setHidden(true);
+      soundEngine.play().catch(() => {});
       onComplete();
       return;
     }
@@ -35,6 +40,7 @@ export const Preloader: React.FC<PreloaderProps> = ({ onComplete }) => {
       } else {
         setTimeout(() => {
           setHidden(true);
+          soundEngine.play().catch(() => {});
           setTimeout(onComplete, 500);
         }, 200);
       }
@@ -47,7 +53,9 @@ export const Preloader: React.FC<PreloaderProps> = ({ onComplete }) => {
   return (
     <div
       id="preloader"
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0B2E1A] transition-all duration-500 ease-out ${
+      onClick={() => soundEngine.play().catch(() => {})}
+      onTouchStart={() => soundEngine.play().catch(() => {})}
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0B2E1A] transition-all duration-500 ease-out cursor-pointer ${
         hidden ? 'opacity-0 pointer-events-none invisible' : 'opacity-100'
       }`}
     >
