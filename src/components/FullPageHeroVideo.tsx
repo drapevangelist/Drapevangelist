@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Volume2, VolumeX, Video, ChevronDown, Check, ArrowDown, ArrowUpRight } from 'lucide-react';
 import { soundEngine } from '../utils/soundEngine';
 import { curationStore } from '../utils/curationStore';
+import { isEditorEnvironment } from '../utils/envUtils';
 
 interface FullPageHeroVideoProps {
   onScrollToBio: () => void;
@@ -40,11 +41,25 @@ export const FullPageHeroVideo: React.FC<FullPageHeroVideoProps> = ({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
+  const [heroContent, setHeroContent] = useState(() => curationStore.getLiveContent().hero);
+  const [isEditorAllowed] = useState(isEditorEnvironment());
   const [currentVideoUrl, setCurrentVideoUrl] = useState(() => {
-    return curationStore.getCustomHeroVideo() || PRESET_VIDEOS[0].url;
+    const live = curationStore.getLiveContent().hero;
+    return live.videoUrl || curationStore.getCustomHeroVideo() || PRESET_VIDEOS[0].url;
   });
   const [customInputUrl, setCustomInputUrl] = useState('');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    const unsub = curationStore.subscribe(() => {
+      const live = curationStore.getLiveContent().hero;
+      setHeroContent(live);
+      if (live.videoUrl) {
+        setCurrentVideoUrl(live.videoUrl);
+      }
+    });
+    return unsub;
+  }, []);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -121,14 +136,16 @@ export const FullPageHeroVideo: React.FC<FullPageHeroVideoProps> = ({
 
         {/* Video source switcher trigger & Quick CTA */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <button
-            onClick={() => setIsDrawerOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs font-mono tracking-wider text-[#C4C7C7] hover:text-[#FFFFFF] bg-[#141414]/90 hover:bg-[#20201F] border border-[#262626] transition-colors cursor-pointer"
-            title="Configure Background Video Source"
-          >
-            <Video className="w-3.5 h-3.5 text-[#D32F2F]" />
-            <span className="hidden sm:inline">Switcher</span>
-          </button>
+          {isEditorAllowed && (
+            <button
+              onClick={() => setIsDrawerOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 text-xs font-mono tracking-wider text-[#C4C7C7] hover:text-[#FFFFFF] bg-[#141414]/90 hover:bg-[#20201F] border border-[#262626] transition-colors cursor-pointer"
+              title="Configure Background Video Source (Backend only)"
+            >
+              <Video className="w-3.5 h-3.5 text-[#D32F2F]" />
+              <span className="hidden sm:inline">Switcher</span>
+            </button>
+          )}
 
           <button
             onClick={onOpenContact}
@@ -143,22 +160,22 @@ export const FullPageHeroVideo: React.FC<FullPageHeroVideoProps> = ({
       <div className="relative z-20 max-w-5xl mx-auto px-6 text-center flex flex-col items-center justify-center">
         {/* Line 1: Mark Chinedum Daniel in kicker style */}
         <p className="text-xs sm:text-sm font-inter font-bold tracking-[0.28em] uppercase text-[#C4C7C7] mb-3 sm:mb-4 select-none">
-          MARK CHINEDUM DANIEL
+          {heroContent.kicker}
         </p>
 
         {/* Line 2: DRAPEVANGELIST in monumental Oswald headline */}
         <h1 className="text-6xl sm:text-8xl md:text-9xl font-oswald uppercase font-bold tracking-tight text-[#FFFFFF] leading-[0.92] select-none">
-          DRAPEVANGELIST
+          {heroContent.headline}
         </h1>
 
         {/* Line 3: Community Operations Manager as the tagline below it */}
         <p className="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg font-inter uppercase font-semibold tracking-[0.16em] text-[#E5E2E1]">
-          Community Operations Manager
+          {heroContent.tagline}
         </p>
 
         {/* Editorial Sub-narrative Kicker */}
         <p className="mt-3 text-xs sm:text-sm text-[#8E9192] max-w-xl font-inter leading-relaxed">
-          Spearheading grassroots developer onboarding, regional protocol summits, and institutional Web3 community ecosystems across West Africa.
+          {heroContent.subtext}
         </p>
 
         {/* Broadsheet Action Buttons with 0px Radius */}

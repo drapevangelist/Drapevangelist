@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowUpRight, Plus, Trash2, X, Upload, Link as LinkIcon, RotateCcw, Maximize2, Camera, Video, Sparkles } from 'lucide-react';
 import { soundEngine } from '../utils/soundEngine';
 import { curationStore } from '../utils/curationStore';
+import { isEditorEnvironment } from '../utils/envUtils';
 import { MosaicItem } from '../types';
 
 interface PhotoMosaicSectionProps {
@@ -10,6 +11,7 @@ interface PhotoMosaicSectionProps {
 
 export const PhotoMosaicSection: React.FC<PhotoMosaicSectionProps> = ({ onScrollToGallery }) => {
   const [items, setItems] = useState<MosaicItem[]>(() => curationStore.getMosaicItems());
+  const [isEditorAllowed] = useState(isEditorEnvironment());
   const [isCurator, setIsCurator] = useState(() => curationStore.isCuratorMode());
   const [activeItem, setActiveItem] = useState<MosaicItem | null>(null);
 
@@ -114,29 +116,33 @@ export const PhotoMosaicSection: React.FC<PhotoMosaicSectionProps> = ({ onScroll
             </span>
             
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => {
-                  soundEngine.playClick();
-                  setIsAddModalOpen(true);
-                }}
-                className="text-xs font-mono uppercase text-[#0A0A0A] bg-[#FFFFFF] hover:bg-[#E5E2E1] font-bold inline-flex items-center gap-1.5 cursor-pointer px-3.5 py-1.5 border border-[#FFFFFF] transition-all"
-                title="Upload or add new photo to the field mosaic"
-              >
-                <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                <span>Add Field Photo</span>
-              </button>
+              {isEditorAllowed && (
+                <>
+                  <button
+                    onClick={() => {
+                      soundEngine.playClick();
+                      setIsAddModalOpen(true);
+                    }}
+                    className="text-xs font-mono uppercase text-[#0A0A0A] bg-[#FFFFFF] hover:bg-[#E5E2E1] font-bold inline-flex items-center gap-1.5 cursor-pointer px-3.5 py-1.5 border border-[#FFFFFF] transition-all"
+                    title="Upload or add new photo to the field mosaic (AI Studio Backend only)"
+                  >
+                    <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                    <span>Add Field Photo</span>
+                  </button>
 
-              <button
-                onClick={() => {
-                  soundEngine.playClick();
-                  curationStore.resetMosaic();
-                }}
-                className="text-xs font-mono uppercase text-[#8E9192] hover:text-[#FFFFFF] bg-[#141414] hover:bg-[#20201F] inline-flex items-center gap-1.5 cursor-pointer px-3 py-1.5 border border-[#262626] transition-all"
-                title="Restore default starter mosaic tiles"
-              >
-                <RotateCcw className="w-3 h-3 text-[#D32F2F]" />
-                <span>Reset Mosaic</span>
-              </button>
+                  <button
+                    onClick={() => {
+                      soundEngine.playClick();
+                      curationStore.resetMosaic();
+                    }}
+                    className="text-xs font-mono uppercase text-[#8E9192] hover:text-[#FFFFFF] bg-[#141414] hover:bg-[#20201F] inline-flex items-center gap-1.5 cursor-pointer px-3 py-1.5 border border-[#262626] transition-all"
+                    title="Restore default starter mosaic tiles"
+                  >
+                    <RotateCcw className="w-3 h-3 text-[#D32F2F]" />
+                    <span>Reset Mosaic</span>
+                  </button>
+                </>
+              )}
 
               {onScrollToGallery && (
                 <button
@@ -155,7 +161,7 @@ export const PhotoMosaicSection: React.FC<PhotoMosaicSectionProps> = ({ onScroll
         </div>
 
         {/* Tip / Notification */}
-        {isCurator && (
+        {isEditorAllowed && isCurator && (
           <div className="mb-6 p-3 bg-[#141414] border border-[#D32F2F]/40 flex items-center justify-between text-xs font-mono text-[#E5E2E1]">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 bg-[#D32F2F] animate-pulse"></span>
@@ -200,19 +206,21 @@ export const PhotoMosaicSection: React.FC<PhotoMosaicSectionProps> = ({ onScroll
                 
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/40 to-transparent opacity-95" />
 
-                {/* Delete button (Always prominent in curator mode, or on hover) */}
-                <button
-                  onClick={(e) => handleDelete(e, item.id)}
-                  title="Remove this photo tile (avoids crowding the site)"
-                  className={`absolute top-3 right-3 p-1.5 transition-all z-20 cursor-pointer border ${
-                    isCurator
-                      ? 'bg-[#D32F2F] text-[#FFFFFF] border-[#FFFFFF] shadow-lg flex items-center gap-1 text-[10px] font-mono px-2'
-                      : 'bg-[#0A0A0A]/90 hover:bg-[#D32F2F] text-[#FFFFFF] border-[#262626] opacity-0 group-hover:opacity-100'
-                  }`}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  {isCurator && <span className="font-bold">DELETE</span>}
-                </button>
+                {/* Delete button (AI Studio Backend only, never shown on Vercel) */}
+                {isEditorAllowed && (
+                  <button
+                    onClick={(e) => handleDelete(e, item.id)}
+                    title="Remove this photo tile (avoids crowding the site)"
+                    className={`absolute top-3 right-3 p-1.5 transition-all z-20 cursor-pointer border ${
+                      isCurator
+                        ? 'bg-[#D32F2F] text-[#FFFFFF] border-[#FFFFFF] shadow-lg flex items-center gap-1 text-[10px] font-mono px-2'
+                        : 'bg-[#0A0A0A]/90 hover:bg-[#D32F2F] text-[#FFFFFF] border-[#262626] opacity-0 group-hover:opacity-100'
+                    }`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {isCurator && <span className="font-bold">DELETE</span>}
+                  </button>
+                )}
 
                 {/* Top Left Tag */}
                 <div className="absolute top-3 left-3 pointer-events-none">

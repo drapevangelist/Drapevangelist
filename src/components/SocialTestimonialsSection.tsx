@@ -4,8 +4,10 @@ import { SocialTestimonial } from '../types';
 import { ShieldCheck, ExternalLink, Quote, Plus, Trash2, RotateCcw, X } from 'lucide-react';
 import { soundEngine } from '../utils/soundEngine';
 import { curationStore } from '../utils/curationStore';
+import { isEditorEnvironment } from '../utils/envUtils';
 
 export const SocialTestimonialsSection: React.FC = () => {
+  const [isEditorAllowed] = useState(isEditorEnvironment());
   const [isCurator, setIsCurator] = useState(() => curationStore.isCuratorMode());
   const [hiddenIds, setHiddenIds] = useState<string[]>(() => curationStore.getHiddenTestimonialIds());
   const [customTestimonials, setCustomTestimonials] = useState<SocialTestimonial[]>(() => curationStore.getCustomTestimonials());
@@ -103,32 +105,35 @@ export const SocialTestimonialsSection: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            {hiddenIds.length > 0 && (
+          {isEditorAllowed && (
+            <div className="flex flex-wrap items-center gap-2.5">
+              {hiddenIds.length > 0 && (
+                <button
+                  onClick={() => {
+                    soundEngine.playClick();
+                    curationStore.restoreTestimonials();
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#141414] hover:bg-[#20201F] text-xs font-mono uppercase tracking-wider text-[#D32F2F] hover:text-[#FFFFFF] border border-[#262626] transition-all cursor-pointer"
+                  title="Restore deleted default testimonials"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Restore ({hiddenIds.length} Hidden)</span>
+                </button>
+              )}
+
               <button
                 onClick={() => {
                   soundEngine.playClick();
-                  curationStore.restoreTestimonials();
+                  setIsAddModalOpen(true);
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#141414] hover:bg-[#20201F] text-xs font-mono uppercase tracking-wider text-[#D32F2F] hover:text-[#FFFFFF] border border-[#262626] transition-all cursor-pointer"
-                title="Restore deleted default testimonials"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#FFFFFF] hover:bg-[#E5E2E1] text-[#0A0A0A] font-inter font-bold text-xs uppercase tracking-wider transition-all cursor-pointer border border-[#FFFFFF]"
+                title="Add peer endorsement (Backend only)"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Restore ({hiddenIds.length} Hidden)</span>
+                <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                <span>Add Testimonial</span>
               </button>
-            )}
-
-            <button
-              onClick={() => {
-                soundEngine.playClick();
-                setIsAddModalOpen(true);
-              }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#FFFFFF] hover:bg-[#E5E2E1] text-[#0A0A0A] font-inter font-bold text-xs uppercase tracking-wider transition-all cursor-pointer border border-[#FFFFFF]"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[3]" />
-              <span>Add Testimonial</span>
-            </button>
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Testimonials Grid (Zero radius, 1px border) */}
@@ -136,13 +141,15 @@ export const SocialTestimonialsSection: React.FC = () => {
           <div className="mt-10 p-12 text-center border border-[#262626] bg-[#131313]">
             <p className="font-oswald text-xl uppercase text-[#FFFFFF]">No Testimonials Displayed</p>
             <p className="text-xs text-[#8E9192] font-inter mt-1">Items have been removed to avoid crowding.</p>
-            <button
-              onClick={() => curationStore.restoreTestimonials()}
-              className="mt-4 px-4 py-2 bg-[#FFFFFF] text-[#0A0A0A] font-mono text-xs uppercase font-bold inline-flex items-center gap-1.5 cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Restore Defaults</span>
-            </button>
+            {isEditorAllowed && (
+              <button
+                onClick={() => curationStore.restoreTestimonials()}
+                className="mt-4 px-4 py-2 bg-[#FFFFFF] text-[#0A0A0A] font-mono text-xs uppercase font-bold inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Restore Defaults</span>
+              </button>
+            )}
           </div>
         ) : (
           <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -151,19 +158,21 @@ export const SocialTestimonialsSection: React.FC = () => {
                 key={item.id}
                 className="p-6 sm:p-7 border border-[#262626] bg-[#131313] hover:border-[#444748] transition-all duration-200 flex flex-col justify-between group relative"
               >
-                {/* Delete button */}
-                <button
-                  onClick={(e) => handleDelete(e, item.id)}
-                  title="Remove this endorsement (avoids crowding the site)"
-                  className={`absolute top-3 right-3 p-1.5 transition-all z-10 cursor-pointer border ${
-                    isCurator
-                      ? 'bg-[#D32F2F] text-[#FFFFFF] border-[#FFFFFF] shadow-lg flex items-center gap-1 text-[10px] font-mono px-2'
-                      : 'bg-[#0A0A0A] hover:bg-[#D32F2F] text-[#FFFFFF] border-[#262626] opacity-0 group-hover:opacity-100'
-                  }`}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  {isCurator && <span className="font-bold">DELETE</span>}
-                </button>
+                {/* Delete button (AI Studio Backend only, never shown on Vercel) */}
+                {isEditorAllowed && (
+                  <button
+                    onClick={(e) => handleDelete(e, item.id)}
+                    title="Remove this endorsement (avoids crowding the site)"
+                    className={`absolute top-3 right-3 p-1.5 transition-all z-10 cursor-pointer border ${
+                      isCurator
+                        ? 'bg-[#D32F2F] text-[#FFFFFF] border-[#FFFFFF] shadow-lg flex items-center gap-1 text-[10px] font-mono px-2'
+                        : 'bg-[#0A0A0A] hover:bg-[#D32F2F] text-[#FFFFFF] border-[#262626] opacity-0 group-hover:opacity-100'
+                    }`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {isCurator && <span className="font-bold">DELETE</span>}
+                  </button>
+                )}
 
                 <div>
                   {/* Top Author Ribbon & Social Link */}

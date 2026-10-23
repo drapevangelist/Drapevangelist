@@ -1,4 +1,8 @@
 import { VisualProofItem, ChapterTabItem, SocialTestimonial, LatestUpdateItem, MosaicItem } from '../types';
+import defaultContent from '../data/persistedContent.json';
+import { isEditorEnvironment } from './envUtils';
+
+export type PersistedContentType = typeof defaultContent;
 
 export const STARTER_MOSAIC_ITEMS: MosaicItem[] = [
   {
@@ -61,6 +65,7 @@ export const STARTER_MOSAIC_ITEMS: MosaicItem[] = [
 
 const KEYS = {
   CURATOR_MODE: 'drape_curator_mode_v2',
+  LIVE_CONTENT: 'drape_live_content_v2',
   HIDDEN_PROOFS: 'drape_hidden_proof_ids_v2',
   CUSTOM_PROOFS: 'drape_custom_proofs_v2',
   MOSAIC_ITEMS: 'drape_mosaic_items_v2',
@@ -87,6 +92,19 @@ function emitChange() {
   });
 }
 
+// Background sync to server if running with server.ts
+async function syncToServer(updatedData: Record<string, any>) {
+  try {
+    await fetch('/api/save-content', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedData),
+    });
+  } catch {
+    // Non-blocking in static environment
+  }
+}
+
 export const curationStore = {
   subscribe(fn: Listener) {
     listeners.add(fn);
@@ -95,8 +113,16 @@ export const curationStore = {
     };
   },
 
+  isEditorAllowed(): boolean {
+    return isEditorEnvironment();
+  },
+
   // CURATOR / EDIT MODE
   isCuratorMode(): boolean {
+    // CRITICAL: On Vercel / production, curation/edit tools are ALWAYS false
+    if (!isEditorEnvironment()) {
+      return false;
+    }
     try {
       return localStorage.getItem(KEYS.CURATOR_MODE) === 'true';
     } catch {
@@ -105,6 +131,7 @@ export const curationStore = {
   },
 
   setCuratorMode(enabled: boolean) {
+    if (!isEditorEnvironment() && enabled) return;
     try {
       localStorage.setItem(KEYS.CURATOR_MODE, enabled ? 'true' : 'false');
       emitChange();
@@ -114,9 +141,65 @@ export const curationStore = {
   },
 
   toggleCuratorMode(): boolean {
+    if (!isEditorEnvironment()) return false;
     const next = !this.isCuratorMode();
     this.setCuratorMode(next);
     return next;
+  },
+
+  // LIVE WORDS & VISUALS CONTENT
+  getLiveContent(): PersistedContentType {
+    let localData: Partial<PersistedContentType> = {};
+    try {
+      const stored = localStorage.getItem(KEYS.LIVE_CONTENT);
+      if (stored) {
+        localData = JSON.parse(stored);
+      }
+    } catch {
+      // Fallback
+    }
+
+    // Merge default content from persistedContent.json with local overrides
+    return {
+      hero: { ...defaultContent.hero, ...(localData.hero || {}) },
+      plate: { ...defaultContent.plate, ...(localData.plate || {}) },
+      bio: { ...defaultContent.bio, ...(localData.bio || {}) },
+      stats: { ...defaultContent.stats, ...(localData.stats || {}) },
+      contact: { ...defaultContent.contact, ...(localData.contact || {}) },
+    };
+  },
+
+  updateSectionContent<K extends keyof PersistedContentType>(
+    section: K,
+    data: Partial<PersistedContentType[K]>
+  ) {
+    const current = this.getLiveContent();
+    const updated = {
+      ...current,
+      [section]: {
+        ...current[section],
+        ...data,
+      },
+    };
+
+    try {
+      localStorage.setItem(KEYS.LIVE_CONTENT, JSON.stringify(updated));
+    } catch {
+      // Storage full or unavailable
+    }
+
+    emitChange();
+    syncToServer({ [section]: updated[section] });
+  },
+
+  saveFullContent(newContent: PersistedContentType) {
+    try {
+      localStorage.setItem(KEYS.LIVE_CONTENT, JSON.stringify(newContent));
+    } catch {
+      // Safe
+    }
+    emitChange();
+    syncToServer(newContent);
   },
 
   // VISUAL PROOFS
@@ -135,7 +218,6 @@ export const curationStore = {
       list.push(id);
       localStorage.setItem(KEYS.HIDDEN_PROOFS, JSON.stringify(list));
     }
-    // Also remove from custom proofs if it was user uploaded
     const custom = this.getCustomProofs().filter((p) => p.id !== id);
     localStorage.setItem(KEYS.CUSTOM_PROOFS, JSON.stringify(custom));
     emitChange();
@@ -222,7 +304,6 @@ export const curationStore = {
       list.push(id);
       localStorage.setItem(KEYS.HIDDEN_CHAPTERS, JSON.stringify(list));
     }
-    // Also remove from custom chapters if it was user added
     const custom = this.getCustomChapters().filter((c) => c.id !== id);
     localStorage.setItem(KEYS.CUSTOM_CHAPTERS, JSON.stringify(custom));
     emitChange();
@@ -360,16 +441,19 @@ export const curationStore = {
   // HERO VIDEO
   getCustomHeroVideo(): string | null {
     try {
-      return localStorage.getItem(KEYS.CUSTOM_HERO_VIDEO);
+      const local = localStorage.getItem(KEYS.CUSTOM_HERO_VIDEO);
+      if (local) return local;
     } catch {
-      return null;
+      //
     }
+    return defaultContent.hero.videoUrl || null;
   },
 
   setCustomHeroVideo(url: string | null) {
     try {
       if (url) {
         localStorage.setItem(KEYS.CUSTOM_HERO_VIDEO, url);
+        this.updateSectionContent('hero', { videoUrl: url });
       } else {
         localStorage.removeItem(KEYS.CUSTOM_HERO_VIDEO);
       }

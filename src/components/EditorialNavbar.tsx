@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, ArrowUpRight, Menu, X, Sparkles, SlidersHorizontal, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Volume2, VolumeX, ArrowUpRight, Menu, X, Sparkles, SlidersHorizontal, RotateCcw, AlertTriangle, Edit3 } from 'lucide-react';
 import { soundEngine } from '../utils/soundEngine';
 import { curationStore } from '../utils/curationStore';
+import { isEditorEnvironment } from '../utils/envUtils';
+import { LiveContentEditorModal } from './LiveContentEditorModal';
 
 interface EditorialNavbarProps {
   onOpenContact: () => void;
@@ -11,8 +13,10 @@ export const EditorialNavbar: React.FC<EditorialNavbarProps> = ({ onOpenContact 
   const [isPlaying, setIsPlaying] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isEditorAllowed, setIsEditorAllowed] = useState(isEditorEnvironment());
   const [isCurator, setIsCurator] = useState(curationStore.isCuratorMode());
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [isEditorModalOpen, setIsEditorModalOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -170,26 +174,46 @@ export const EditorialNavbar: React.FC<EditorialNavbarProps> = ({ onOpenContact 
               <span className="uppercase text-[10px] tracking-wider text-[#FFFFFF] font-bold">Active Dispatch</span>
             </div>
 
-            {/* Curator / Edit Mode Toggle Button */}
-            <button
-              onClick={() => {
-                soundEngine.playClick();
-                const next = curationStore.toggleCuratorMode();
-                setIsCurator(next);
-              }}
-              aria-label="Toggle site curation mode"
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 border text-xs font-mono transition-colors cursor-pointer ${
-                isCurator
-                  ? 'bg-[#D32F2F] text-[#FFFFFF] border-[#D32F2F] font-bold'
-                  : 'border-[#262626] text-[#8E9192] hover:text-[#FFFFFF] bg-[#131313]'
-              }`}
-              title={isCurator ? 'Exit Archival Curation Mode' : 'Toggle Site Curation Mode: delete irrelevant items & upload media'}
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline text-[11px]">
-                {isCurator ? 'Curating: ON' : 'Curate Site'}
-              </span>
-            </button>
+            {/* AI Studio Backend Editor Controls - Hidden completely on Vercel / Live Production */}
+            {isEditorAllowed && (
+              <>
+                <button
+                  onClick={() => {
+                    soundEngine.playClick();
+                    setIsEditorModalOpen(true);
+                  }}
+                  aria-label="Open Full Broadsheet Content & Visuals Editor"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 border border-[#D32F2F]/60 text-xs font-mono text-[#FFFFFF] hover:bg-[#D32F2F]/20 bg-[#1A1112] transition-colors cursor-pointer"
+                  title="Edit copy, headlines, bio, photos, and video (AI Studio Backend only)"
+                >
+                  <Edit3 className="h-3.5 w-3.5 text-[#D32F2F]" />
+                  <span className="hidden sm:inline text-[11px] font-bold text-[#E5E2E1]">
+                    Edit Content
+                  </span>
+                </button>
+
+                {/* Curator / Edit Mode Toggle Button */}
+                <button
+                  onClick={() => {
+                    soundEngine.playClick();
+                    const next = curationStore.toggleCuratorMode();
+                    setIsCurator(next);
+                  }}
+                  aria-label="Toggle site curation mode"
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 border text-xs font-mono transition-colors cursor-pointer ${
+                    isCurator
+                      ? 'bg-[#D32F2F] text-[#FFFFFF] border-[#D32F2F] font-bold'
+                      : 'border-[#262626] text-[#8E9192] hover:text-[#FFFFFF] bg-[#131313]'
+                  }`}
+                  title={isCurator ? 'Exit Archival Curation Mode' : 'Toggle Site Curation Mode: delete irrelevant items & upload media'}
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline text-[11px]">
+                    {isCurator ? 'Curating: ON' : 'Curate Site'}
+                  </span>
+                </button>
+              </>
+            )}
 
             {/* Desktop Connect Button */}
             <button
@@ -215,8 +239,8 @@ export const EditorialNavbar: React.FC<EditorialNavbarProps> = ({ onOpenContact 
         </div>
       </header>
 
-      {/* Persistent Broadsheet Curation Banner when Curator Mode is Active */}
-      {isCurator && (
+      {/* Persistent Broadsheet Curation Banner when Curator Mode is Active (AI Studio Backend only) */}
+      {isEditorAllowed && isCurator && (
         <div className="bg-[#141414] border-b border-[#D32F2F] py-2 px-4 sm:px-6 sticky top-16 z-30 flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-[#E5E2E1] animate-in slide-in-from-top-2 duration-200">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 bg-[#D32F2F] animate-ping" />
@@ -326,6 +350,36 @@ export const EditorialNavbar: React.FC<EditorialNavbarProps> = ({ onOpenContact 
             ))}
           </nav>
 
+          {isEditorAllowed && (
+            <div className="pt-3 pb-2 space-y-2 border-t border-[#262626]">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setIsEditorModalOpen(true);
+                }}
+                className="w-full py-2.5 px-3 flex items-center justify-center gap-2 font-mono text-xs uppercase tracking-wider bg-[#1A1112] text-[#FFFFFF] border border-[#D32F2F] font-bold"
+              >
+                <Edit3 className="w-3.5 h-3.5 text-[#D32F2F]" />
+                <span>Edit Site Copy & Visuals</span>
+              </button>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  const next = curationStore.toggleCuratorMode();
+                  setIsCurator(next);
+                }}
+                className={`w-full py-2.5 px-3 flex items-center justify-center gap-2 font-mono text-xs uppercase tracking-wider border font-bold ${
+                  isCurator
+                    ? 'bg-[#D32F2F] text-[#FFFFFF] border-[#D32F2F]'
+                    : 'bg-[#141414] text-[#8E9192] border-[#262626]'
+                }`}
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>{isCurator ? 'Curating: ON' : 'Toggle Curate Mode'}</span>
+              </button>
+            </div>
+          )}
+
           <div className="pt-4 border-t border-[#262626]">
             <button
               onClick={() => {
@@ -338,6 +392,14 @@ export const EditorialNavbar: React.FC<EditorialNavbarProps> = ({ onOpenContact 
             </button>
           </div>
         </div>
+      )}
+
+      {/* Full Broadsheet Content & Visuals Editor Modal (Mounted only when editor is allowed) */}
+      {isEditorAllowed && (
+        <LiveContentEditorModal
+          isOpen={isEditorModalOpen}
+          onClose={() => setIsEditorModalOpen(false)}
+        />
       )}
     </>
   );

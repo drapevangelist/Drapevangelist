@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { soundEngine } from '../utils/soundEngine';
 import { curationStore } from '../utils/curationStore';
+import { isEditorEnvironment } from '../utils/envUtils';
 
 interface ChaptersSectionProps {
   onScrollToProof?: () => void;
@@ -27,6 +28,7 @@ type TabKey = 'posts_held' | 'drapnet' | 'events' | 'certificates' | 'education'
 
 export const ChaptersSection: React.FC<ChaptersSectionProps> = ({ onScrollToProof }) => {
   const [activeTab, setActiveTab] = useState<TabKey>('posts_held');
+  const [isEditorAllowed] = useState(isEditorEnvironment());
   const [isCurator, setIsCurator] = useState(() => curationStore.isCuratorMode());
   const [hiddenIds, setHiddenIds] = useState<string[]>(() => curationStore.getHiddenChapterIds());
   const [customChapters, setCustomChapters] = useState<ChapterTabItem[]>(() => curationStore.getCustomChapters());
@@ -129,32 +131,35 @@ export const ChaptersSection: React.FC<ChaptersSectionProps> = ({ onScrollToProo
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            {hiddenIds.length > 0 && (
+          {isEditorAllowed && (
+            <div className="flex flex-wrap items-center gap-2.5">
+              {hiddenIds.length > 0 && (
+                <button
+                  onClick={() => {
+                    soundEngine.playClick();
+                    curationStore.restoreChapters();
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#141414] hover:bg-[#20201F] text-xs font-mono uppercase tracking-wider text-[#D32F2F] hover:text-[#FFFFFF] border border-[#262626] transition-all cursor-pointer"
+                  title="Restore deleted default chapters"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Restore ({hiddenIds.length} Hidden)</span>
+                </button>
+              )}
+
               <button
                 onClick={() => {
                   soundEngine.playClick();
-                  curationStore.restoreChapters();
+                  setIsAddModalOpen(true);
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#141414] hover:bg-[#20201F] text-xs font-mono uppercase tracking-wider text-[#D32F2F] hover:text-[#FFFFFF] border border-[#262626] transition-all cursor-pointer"
-                title="Restore deleted default chapters"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#FFFFFF] hover:bg-[#E5E2E1] text-[#0A0A0A] font-inter font-bold text-xs uppercase tracking-wider transition-all cursor-pointer border border-[#FFFFFF]"
+                title="Add new chapter or achievement (Backend only)"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Restore ({hiddenIds.length} Hidden)</span>
+                <Plus className="w-4 h-4 stroke-[3]" />
+                <span>Add Chapter Record</span>
               </button>
-            )}
-
-            <button
-              onClick={() => {
-                soundEngine.playClick();
-                setIsAddModalOpen(true);
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#FFFFFF] hover:bg-[#E5E2E1] text-[#0A0A0A] font-inter font-bold text-xs uppercase tracking-wider transition-all cursor-pointer border border-[#FFFFFF]"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Add Chapter Record</span>
-            </button>
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Seven Chapters Horizontal Modular Timeline Ribbon */}
@@ -331,19 +336,21 @@ export const ChaptersSection: React.FC<ChaptersSectionProps> = ({ onScrollToProo
                     : 'border-[#262626] hover:border-[#444748]'
                 }`}
               >
-                {/* Delete / Prune button to keep site clean */}
-                <button
-                  onClick={(e) => handleDeleteChapter(e, item.id)}
-                  title="Remove this chapter item (avoids crowding the site)"
-                  className={`absolute top-4 right-4 p-1.5 transition-all z-10 cursor-pointer border ${
-                    isCurator
-                      ? 'bg-[#D32F2F] text-[#FFFFFF] border-[#FFFFFF] shadow-lg flex items-center gap-1 text-[10px] font-mono px-2'
-                      : 'bg-[#0A0A0A] hover:bg-[#D32F2F] text-[#FFFFFF] border-[#262626] opacity-0 group-hover:opacity-100'
-                  }`}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  {isCurator && <span className="font-bold">DELETE</span>}
-                </button>
+                {/* Delete / Prune button to keep site clean (AI Studio Backend only) */}
+                {isEditorAllowed && (
+                  <button
+                    onClick={(e) => handleDeleteChapter(e, item.id)}
+                    title="Remove this chapter item (avoids crowding the site)"
+                    className={`absolute top-4 right-4 p-1.5 transition-all z-10 cursor-pointer border ${
+                      isCurator
+                        ? 'bg-[#D32F2F] text-[#FFFFFF] border-[#FFFFFF] shadow-lg flex items-center gap-1 text-[10px] font-mono px-2'
+                        : 'bg-[#0A0A0A] hover:bg-[#D32F2F] text-[#FFFFFF] border-[#262626] opacity-0 group-hover:opacity-100'
+                    }`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {isCurator && <span className="font-bold">DELETE</span>}
+                  </button>
+                )}
 
                 {/* Special DRAPNET Dedicated Plate Banner */}
                 {item.category === 'drapnet' && (

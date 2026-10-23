@@ -22,8 +22,10 @@ import {
 } from 'lucide-react';
 import { soundEngine } from '../utils/soundEngine';
 import { curationStore } from '../utils/curationStore';
+import { isEditorEnvironment } from '../utils/envUtils';
 
 export const VisualProofsSection: React.FC = () => {
+  const [isEditorAllowed] = useState(isEditorEnvironment());
   const [isCurator, setIsCurator] = useState(curationStore.isCuratorMode());
   const [mediaList, setMediaList] = useState<VisualProofItem[]>(() => {
     const hidden = curationStore.getHiddenProofIds();
@@ -208,42 +210,47 @@ export const VisualProofsSection: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => {
-                soundEngine.playClick();
-                setIsHelpModalOpen(true);
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#141414] hover:bg-[#20201F] text-xs font-mono uppercase tracking-wider text-[#C4C7C7] hover:text-[#FFFFFF] border border-[#262626] transition-all cursor-pointer"
-              title="Social Media Sync & Upload Guide"
-            >
-              <HelpCircle className="w-3.5 h-3.5 text-[#D32F2F]" />
-              <span>Social Media Sync Guide</span>
-            </button>
+            {isEditorAllowed && (
+              <>
+                <button
+                  onClick={() => {
+                    soundEngine.playClick();
+                    setIsHelpModalOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#141414] hover:bg-[#20201F] text-xs font-mono uppercase tracking-wider text-[#C4C7C7] hover:text-[#FFFFFF] border border-[#262626] transition-all cursor-pointer"
+                  title="Social Media Sync & Upload Guide"
+                >
+                  <HelpCircle className="w-3.5 h-3.5 text-[#D32F2F]" />
+                  <span>Social Media Sync Guide</span>
+                </button>
 
-            {hiddenCount > 0 && (
-              <button
-                onClick={() => {
-                  soundEngine.playClick();
-                  curationStore.restoreProofs();
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#141414] hover:bg-[#20201F] text-xs font-mono uppercase tracking-wider text-[#D32F2F] hover:text-[#FFFFFF] border border-[#262626] transition-all cursor-pointer"
-                title="Restore deleted default proof items"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Restore ({hiddenCount} Hidden)</span>
-              </button>
+                {hiddenCount > 0 && (
+                  <button
+                    onClick={() => {
+                      soundEngine.playClick();
+                      curationStore.restoreProofs();
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#141414] hover:bg-[#20201F] text-xs font-mono uppercase tracking-wider text-[#D32F2F] hover:text-[#FFFFFF] border border-[#262626] transition-all cursor-pointer"
+                    title="Restore deleted default proof items"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Restore ({hiddenCount} Hidden)</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => {
+                    soundEngine.playClick();
+                    setIsAddModalOpen(true);
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#FFFFFF] hover:bg-[#E5E2E1] text-[#0A0A0A] font-inter font-bold text-xs uppercase tracking-wider transition-all cursor-pointer border border-[#FFFFFF]"
+                  title="Add photographic or video proof (Backend only)"
+                >
+                  <Plus className="w-4 h-4 stroke-[3]" />
+                  <span>Add Proof Record</span>
+                </button>
+              </>
             )}
-
-            <button
-              onClick={() => {
-                soundEngine.playClick();
-                setIsAddModalOpen(true);
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#FFFFFF] hover:bg-[#E5E2E1] text-[#0A0A0A] font-inter font-bold text-xs uppercase tracking-wider transition-all cursor-pointer border border-[#FFFFFF]"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Add Proof Record</span>
-            </button>
 
             <span className="px-3 py-2 bg-[#141414] border border-[#262626] text-xs font-mono text-[#FFFFFF] uppercase tracking-wider font-bold">
               {mediaList.length} Records
@@ -251,18 +258,20 @@ export const VisualProofsSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Quick Help Callout Banner */}
-        <div className="mt-6 p-4 bg-[#141414] border border-[#262626] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-inter">
-          <div className="flex items-center gap-2.5 text-[#C4C7C7]">
-            <Sparkles className="w-4 h-4 text-[#D32F2F] shrink-0" />
-            <span>
-              <strong className="text-[#FFFFFF]">Syncing pictures from social media:</strong> You can upload files directly from your phone/laptop, or right-click any photo from your Twitter/X or LinkedIn post and paste the image link!
-            </span>
+        {/* Quick Help Callout Banner (AI Studio Backend only) */}
+        {isEditorAllowed && isCurator && (
+          <div className="mt-6 p-4 bg-[#141414] border border-[#262626] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-inter animate-in fade-in">
+            <div className="flex items-center gap-2.5 text-[#C4C7C7]">
+              <Sparkles className="w-4 h-4 text-[#D32F2F] shrink-0" />
+              <span>
+                <strong className="text-[#FFFFFF]">Syncing pictures from social media:</strong> You can upload files directly from your phone/laptop, or right-click any photo from your Twitter/X or LinkedIn post and paste the image link!
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-[11px] font-mono text-[#8E9192]">
+              <span>Hover any card or enable Curate Site to delete irrelevant records.</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-[11px] font-mono text-[#8E9192]">
-            <span>Hover any card or enable Curate Site to delete irrelevant records.</span>
-          </div>
-        </div>
+        )}
 
         {/* Category Filters (Zero radius, sharp tabs) */}
         <div className="mt-8 flex flex-wrap gap-2 pb-4 border-b border-[#262626]">
@@ -322,19 +331,21 @@ export const VisualProofsSection: React.FC = () => {
                   )}
                 </div>
 
-                {/* Delete button to remove irrelevant records and avoid site crowding */}
-                <button
-                  onClick={(e) => handleDeleteItem(e, item.id)}
-                  title="Delete record from archive (avoids site crowding)"
-                  className={`absolute top-3 right-3 p-1.5 transition-all z-10 cursor-pointer border ${
-                    isCurator
-                      ? 'bg-[#D32F2F] text-[#FFFFFF] border-[#FFFFFF] shadow-lg flex items-center gap-1 text-[10px] font-mono px-2'
-                      : 'bg-[#0A0A0A]/90 hover:bg-[#D32F2F] text-[#FFFFFF] border-[#262626] opacity-0 group-hover:opacity-100'
-                  }`}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  {isCurator && <span className="font-bold">DELETE</span>}
-                </button>
+                {/* Delete button (AI Studio Backend only, hidden on Vercel) */}
+                {isEditorAllowed && (
+                  <button
+                    onClick={(e) => handleDeleteItem(e, item.id)}
+                    title="Delete record from archive (avoids site crowding)"
+                    className={`absolute top-3 right-3 p-1.5 transition-all z-10 cursor-pointer border ${
+                      isCurator
+                        ? 'bg-[#D32F2F] text-[#FFFFFF] border-[#FFFFFF] shadow-lg flex items-center gap-1 text-[10px] font-mono px-2'
+                        : 'bg-[#0A0A0A]/90 hover:bg-[#D32F2F] text-[#FFFFFF] border-[#262626] opacity-0 group-hover:opacity-100'
+                    }`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {isCurator && <span className="font-bold">DELETE</span>}
+                  </button>
+                )}
 
                 {/* Center Hover Action Indicator */}
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50">

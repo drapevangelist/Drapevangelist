@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowDown, Sparkles } from 'lucide-react';
 import { soundEngine } from '../utils/soundEngine';
+import { curationStore } from '../utils/curationStore';
 
 interface HeroDocumentaryPlateProps {
   onScrollToLedger: () => void;
@@ -11,6 +12,15 @@ export const HeroDocumentaryPlate: React.FC<HeroDocumentaryPlateProps> = ({
   onScrollToLedger,
   onScrollToAi,
 }) => {
+  const [plate, setPlate] = useState(() => curationStore.getLiveContent().plate);
+
+  useEffect(() => {
+    const unsub = curationStore.subscribe(() => {
+      setPlate(curationStore.getLiveContent().plate);
+    });
+    return unsub;
+  }, []);
+
   return (
     <section className="relative w-full bg-[#0A0A0A] border-b border-[#262626] py-12 lg:py-16 text-[#E5E2E1]">
       <div className="max-w-6xl mx-auto px-6 sm:px-12">
@@ -19,12 +29,12 @@ export const HeroDocumentaryPlate: React.FC<HeroDocumentaryPlateProps> = ({
           <div className="flex items-center gap-3">
             <span className="inline-block w-2.5 h-2.5 bg-[#D32F2F]"></span>
             <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#E5E2E1] font-bold">
-              ARCHIVAL RECORD // 2022—2026
+              {plate.dispatchTag}
             </span>
           </div>
           <div className="hidden sm:flex items-center gap-6 font-mono text-xs uppercase text-[#757575]">
-            <span>PORT HARCOURT • LAGOS • GLOBAL NODES</span>
-            <span>DISPATCH NO. 044</span>
+            <span>{plate.dispatchLocation}</span>
+            <span>{plate.dispatchNumber}</span>
           </div>
         </div>
 
@@ -34,15 +44,15 @@ export const HeroDocumentaryPlate: React.FC<HeroDocumentaryPlateProps> = ({
             <span className="font-mono text-xs uppercase text-[#D32F2F] tracking-widest block font-bold">
               DECENTRALIZED COMMUNITY ARCHIVE
             </span>
-            <h2 className="font-oswald text-4xl sm:text-6xl lg:text-7xl uppercase font-bold tracking-tight text-[#FFFFFF] leading-[0.92]">
-              LEADER. OPERATOR.<br />ECOSYSTEM BUILDER.
+            <h2 className="font-oswald text-4xl sm:text-6xl lg:text-7xl uppercase font-bold tracking-tight text-[#FFFFFF] leading-[0.92] whitespace-pre-line">
+              {plate.headline}
             </h2>
           </div>
 
           <div className="lg:col-span-4 flex flex-col justify-end space-y-4">
             <div className="bg-[#131313] p-5 border-l-2 border-[#D32F2F] border-y border-r border-[#262626]">
               <p className="text-xs sm:text-sm text-[#C4C7C7] font-inter leading-relaxed">
-                Building community, content, and builder pipelines across the decentralized web. <span className="text-[#FFFFFF] font-semibold">44+ verified engagements</span> across 20+ Web3 ecosystems — Base, Movement, Solana, Sui, Decred, Arbitrum, Ethereum.
+                {plate.body}
               </p>
             </div>
             <div className="flex items-center gap-3 pt-1">
@@ -74,8 +84,8 @@ export const HeroDocumentaryPlate: React.FC<HeroDocumentaryPlateProps> = ({
         {/* Hero Documentary Plate Photo Feature */}
         <div className="relative w-full aspect-[21/9] min-h-[320px] max-h-[520px] bg-[#131313] overflow-hidden border border-[#262626] group">
           <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDodyDtOQtr85TLBf2rwH3XXDX22CY4qNd-QDicqF7jsN8-70rw50OgUV5P_jqObeajSMzg8ouLO02FeRm6yJZt31doNGN-8QuKGEbSH9j5Ser_p1VCVv-q_uTq46d-AqhoBc07uUJFyx_AINc1ZKeGYXS28gRGPOBDpGTOHJUlsjEAN7Zv9wfnKK9x5vdcEY6iedLxlJFlyjoU1TBDL9Li7lfBp-D1RMf21muLgJ3MJWV9nhMDcn0"
-            alt="Campus Convergence UniPort Summit"
+            src={plate.photoUrl}
+            alt={plate.photoTitle}
             className="w-full h-full object-cover filter grayscale contrast-125 brightness-90 group-hover:scale-105 group-hover:grayscale-0 transition-all duration-700"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/40 to-transparent" />
@@ -85,11 +95,11 @@ export const HeroDocumentaryPlate: React.FC<HeroDocumentaryPlateProps> = ({
                 IRL DISPATCH // FIELD ARCHIVE
               </span>
               <p className="font-oswald text-2xl sm:text-4xl uppercase text-[#FFFFFF] font-bold">
-                CAMPUS CONVERGENCE — UNIPORT SUMMIT
+                {plate.photoTitle}
               </p>
             </div>
             <div className="font-mono text-[11px] uppercase text-[#E5E2E1] tracking-widest bg-[#0A0A0A]/90 px-4 py-2 border border-[#262626] backdrop-blur-md">
-              70+ ONBOARDED • 40+ HOURS LIVE CODING WORKSHOPS
+              {plate.photoTag}
             </div>
           </div>
         </div>

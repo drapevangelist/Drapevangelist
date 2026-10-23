@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Compass, ArrowUpRight } from 'lucide-react';
 import { soundEngine } from '../utils/soundEngine';
+import { curationStore } from '../utils/curationStore';
 
 interface EditorialBioSectionProps {
   onExploreChapters: () => void;
@@ -11,6 +12,15 @@ export const EditorialBioSection: React.FC<EditorialBioSectionProps> = ({
   onExploreChapters,
   onExploreProof,
 }) => {
+  const [bio, setBio] = useState(() => curationStore.getLiveContent().bio);
+
+  useEffect(() => {
+    const unsub = curationStore.subscribe(() => {
+      setBio(curationStore.getLiveContent().bio);
+    });
+    return unsub;
+  }, []);
+
   return (
     <section id="bio" className="py-20 sm:py-28 px-6 sm:px-12 bg-[#0A0A0A] border-t border-[#262626] relative text-[#E5E2E1]">
       <div className="max-w-6xl mx-auto">
@@ -52,7 +62,7 @@ export const EditorialBioSection: React.FC<EditorialBioSectionProps> = ({
             <div className="relative border border-[#262626] bg-[#131313] p-4">
               <div className="aspect-[4/5] relative bg-[#0A0A0A] overflow-hidden border border-[#262626]">
                 <img
-                  src="https://lh3.googleusercontent.com/aida/AEtjO1VznS8ccb9Y8azNd-tdmzBuk9nfR-NWhnMZGOgOfE9ypHtzAc0crWqeqvz6n0M287VRu1Bt41BZ6IGhQjMHdLkq-9foQTzfhU_08jPfc2rOQwdgOG5ZtPou1KNCePFTixcyMw5WAyFqD9MHDHb0Xj6W301dz3wFzDUX5sT5sFKP1CBuEGaNpcEzKj932fhz2zeZHHwtYJmA-0P6jvVQAcL_EhrmeVDHqZ7LWw_pTmVeOgtutgR0pRi1xg"
+                  src={bio.portraitUrl}
                   alt="Mark Chinedum Daniel (Drapevangelist)"
                   className="w-full h-full object-cover object-center filter grayscale contrast-125 brightness-95 hover:grayscale-0 transition-all duration-700"
                 />
@@ -93,7 +103,7 @@ export const EditorialBioSection: React.FC<EditorialBioSectionProps> = ({
                 <div className="border border-[#262626] bg-[#0A0A0A] p-2 flex flex-col group">
                   <div className="aspect-square overflow-hidden bg-[#141414] mb-2">
                     <img
-                      src="/assets/ambassador.jpg"
+                      src={bio.ambassadorImage}
                       alt="Mark - Global Ambassador"
                       className="w-full h-full object-cover filter grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
                     />
@@ -106,7 +116,7 @@ export const EditorialBioSection: React.FC<EditorialBioSectionProps> = ({
                 <div className="border border-[#262626] bg-[#0A0A0A] p-2 flex flex-col group">
                   <div className="aspect-square overflow-hidden bg-[#141414] mb-2">
                     <img
-                      src="/assets/musician.jpg"
+                      src={bio.musicianImage}
                       alt="Mark - Recording Artist"
                       className="w-full h-full object-cover filter grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
                     />
@@ -119,7 +129,7 @@ export const EditorialBioSection: React.FC<EditorialBioSectionProps> = ({
                 <div className="border border-[#262626] bg-[#0A0A0A] p-2 flex flex-col group">
                   <div className="aspect-square overflow-hidden bg-[#141414] mb-2">
                     <img
-                      src="/assets/gida.jpg"
+                      src={bio.mascotImage}
                       alt="Mark - Community Mascot"
                       className="w-full h-full object-cover filter grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
                     />
@@ -157,11 +167,11 @@ export const EditorialBioSection: React.FC<EditorialBioSectionProps> = ({
           <div className="lg:col-span-7 space-y-6 text-[#C4C7C7] font-inter leading-relaxed text-base sm:text-lg">
             {/* Opening Drop-Cap Paragraph */}
             <p className="first-letter:text-6xl first-letter:font-oswald first-letter:font-bold first-letter:text-[#D32F2F] first-letter:float-left first-letter:mr-4 first-letter:mt-1 leading-relaxed">
-              Mark Chinedum Daniel is a distinguished Community Operations Manager, Web3 strategist, and ecosystem organizer based in Rivers State, Nigeria. Operating under the banner of <strong className="text-[#FFFFFF]">DRAPEVANGELIST</strong>, Mark has spent the past several years engineering on-the-ground developer movements, leading major university tech communities, and coordinating high-impact regional tech summits that connect African builders directly with leading global blockchain protocols.
+              {bio.paragraph1}
             </p>
 
             <p>
-              His journey began on the university campus of Port Harcourt (UniPort), where he recognized the severe gulf between theoretical software engineering coursework and the burgeoning decentralized economy. Rather than waiting for external curriculum updates, Mark stepped up to co-lead <strong className="text-[#FFFFFF]">Blockchain Uniport</strong>. Over a dedicated twelve-month executive tenure (August 2023 – August 2024), he personally mentored and onboarded more than seventy student engineers and creatives into active Web3 development, teaching them how to create non-custodial wallets, audit testnet smart contracts, and participate in global hackathons.
+              {bio.paragraph2}
             </p>
 
             <blockquote className="my-8 p-6 border-l-2 border-[#D32F2F] bg-[#141414] border-y border-r border-[#262626] font-inter italic text-lg sm:text-xl text-[#FFFFFF]">
@@ -172,7 +182,7 @@ export const EditorialBioSection: React.FC<EditorialBioSectionProps> = ({
             </blockquote>
 
             <p>
-              Mark's leadership rapidly expanded beyond campus borders. He was appointed as the <strong className="text-[#FFFFFF]">UniPort Campus Coordinator for ETHNigeria</strong> (covering Rivers State), and served as the Rivers State lead for the <strong className="text-[#FFFFFF]">SouthEast Blockchain & Games Week (SEBGW)</strong>, coordinating multi-university builder delegations and managing high-stakes event logistics for premier regional gatherings.
+              {bio.paragraph3}
             </p>
 
             <p>

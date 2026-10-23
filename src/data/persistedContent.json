@@ -1,0 +1,53 @@
+{
+  "hero": {
+    "kicker": "MARK CHINEDUM DANIEL",
+    "headline": "DRAPEVANGELIST",
+    "tagline": "Community Operations Manager",
+    "subtext": "Spearheading grassroots developer onboarding, regional protocol summits, and institutional Web3 community ecosystems across West Africa.",
+    "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+  },
+  "plate": {
+    "dispatchTag": "ARCHIVAL RECORD // 2022—2026",
+    "dispatchLocation": "PORT HARCOURT • LAGOS • GLOBAL NODES",
+    "dispatchNumber": "DISPATCH NO. 044",
+    "kicker": "DECENTRALIZED COMMUNITY ARCHIVE",
+    "headline": "LEADER. OPERATOR.\nECOSYSTEM BUILDER.",
+    "body": "Building community, content, and builder pipelines across the decentralized web. 44+ verified engagements across 20+ Web3 ecosystems — Base, Movement, Solana, Sui, Decred, Arbitrum, Ethereum.",
+    "photoTitle": "CAMPUS CONVERGENCE — UNIPORT SUMMIT",
+    "photoTag": "70+ ONBOARDED • 40+ HOURS LIVE CODING WORKSHOPS",
+    "photoUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDodyDtOQtr85TLBf2rwH3XXDX22CY4qNd-QDicqF7jsN8-70rw50OgUV5P_jqObeajSMzg8ouLO02FeRm6yJZt31doNGN-8QuKGEbSH9j5Ser_p1VCVv-q_uTq46d-AqhoBc07uUJFyx_AINc1ZKeGYXS28gRGPOBDpGTOHJUlsjEAN7Zv9wfnKK9x5vdcEY6iedLxlJFlyjoU1TBDL9Li7lfBp-D1RMf21muLgJ3MJWV9nhMDcn0"
+  },
+  "bio": {
+    "sectionTag": "SECTION 01 // ORAL & RECORDED HISTORY",
+    "headline": "The Journey",
+    "subheadline": "From grassroots campus tech evangelist to high-velocity Web3 ecosystem builder, operator, and regional community manager.",
+    "portraitUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VznS8ccb9Y8azNd-tdmzBuk9nfR-NWhnMZGOgOfE9ypHtzAc0crWqeqvz6n0M287VRu1Bt41BZ6IGhQjMHdLkq-9foQTzfhU_08jPfc2rOQwdgOG5ZtPou1KNCePFTixcyMw5WAyFqD9MHDHb0Xj6W301dz3wFzDUX5sT5sFKP1CBuEGaNpcEzKj932fhz2zeZHHwtYJmA-0P6jvVQAcL_EhrmeVDHqZ7LWw_pTmVeOgtutgR0pRi1xg",
+    "idBadge": "ID: D-EVANGELIST-042 · Rivers State, Nigeria",
+    "ambassadorImage": "/assets/ambassador.jpg",
+    "musicianImage": "/assets/musician.jpg",
+    "mascotImage": "/assets/gida.jpg",
+    "paragraph1": "Mark Chinedum Daniel, known in the global ecosystem as Drapevangelist, operates at the vital intersection of decentralized protocol adoption, technical community infrastructure, and regional builder empowerment across Africa.",
+    "paragraph2": "His track record spans foundational leadership at Blockchain Uniport, organizing university hackathon cohorts, onboarding 70+ student developers from scratch into smart contract tooling, and anchoring verified physical summits for premier global ecosystems including Base, Movement Labs, ETHNigeria, and Rujira.",
+    "paragraph3": "Beyond operations, Daniel channels his passion as a recording artist and creative technologist—translating complex protocol architectures into cultural narratives that resonate from university halls in Port Harcourt to global decentralized governance tables."
+  },
+  "stats": {
+    "stat1Num": "5,000+",
+    "stat1Label": "Persons Impacted",
+    "stat1Desc": "Students, developers & attendees guided across IRL summits & 70+ builders personally onboarded at UniPort.",
+    "stat2Num": "40+",
+    "stat2Label": "Events Held & Coordinated",
+    "stat2Desc": "Summits, hackathons, and technical meetups across Base, Movement, Rujira, ETHNigeria, SEBGW & UniPort.",
+    "stat3Num": "20+",
+    "stat3Label": "Protocols & Ecosystems",
+    "stat3Desc": "Active contributions across Base, Movement Network, Solana, Sui, Decred, Lisk, Injective & Ethereum.",
+    "stat4Num": "11+",
+    "stat4Label": "Ambassador & Leadership Roles",
+    "stat4Desc": "Recognized leadership across global foundations, student developer clubs, and regional community hubs."
+  },
+  "contact": {
+    "manifestoTitle": "A DECENTRALIZED\nFUTURE IS POSSIBLE.",
+    "manifestoBody": "Open infrastructure requires disciplined operators on the ground. From university auditoriums to global developer protocol tables, the mission is transparent, relentless, and on-chain.",
+    "email": "drapevangelist@gmail.com",
+    "channelsSubtext": "Available for protocol community operations, campus and developer mobilization, IRL event management, and editorial writing collaborations."
+  }
+}

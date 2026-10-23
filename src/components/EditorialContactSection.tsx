@@ -1,14 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SOCIAL_LINKS } from '../data/portfolioData';
 import { soundEngine } from '../utils/soundEngine';
+import { curationStore } from '../utils/curationStore';
 import { Mail, Check, Copy, ArrowUpRight, Send } from 'lucide-react';
 
 export const EditorialContactSection: React.FC = () => {
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [formSent, setFormSent] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [contactContent, setContactContent] = useState(() => curationStore.getLiveContent().contact);
 
-  const email = 'drapevangelist@gmail.com';
+  useEffect(() => {
+    const unsub = curationStore.subscribe(() => {
+      setContactContent(curationStore.getLiveContent().contact);
+    });
+    return unsub;
+  }, []);
+
+  const email = contactContent.email || 'drapevangelist@gmail.com';
 
   const copyEmail = () => {
     soundEngine.playClick();
@@ -32,11 +41,11 @@ export const EditorialContactSection: React.FC = () => {
           <span className="font-mono text-xs uppercase tracking-[0.25em] text-[#D32F2F] font-bold block">
             THE CLOSING DISPATCH
           </span>
-          <h2 className="font-oswald text-5xl sm:text-7xl lg:text-8xl leading-[0.88] uppercase font-bold text-[#FFFFFF] tracking-tight">
-            A DECENTRALIZED<br />FUTURE IS POSSIBLE.
+          <h2 className="font-oswald text-5xl sm:text-7xl lg:text-8xl leading-[0.88] uppercase font-bold text-[#FFFFFF] tracking-tight whitespace-pre-line">
+            {contactContent.manifestoTitle}
           </h2>
           <p className="text-sm sm:text-base text-[#8E9192] max-w-2xl mx-auto pt-2 leading-relaxed font-inter">
-            Open infrastructure requires disciplined operators on the ground. From university auditoriums to global developer protocol tables, the mission is transparent, relentless, and on-chain.
+            {contactContent.manifestoBody}
           </p>
 
           {/* Direct Network Badges */}
@@ -69,7 +78,7 @@ export const EditorialContactSection: React.FC = () => {
             </h2>
 
             <p className="mt-4 text-sm sm:text-base text-[#8E9192] leading-relaxed max-w-lg font-inter">
-              Available for protocol community operations, campus and developer mobilization, IRL event management, and editorial writing collaborations.
+              {contactContent.channelsSubtext}
             </p>
 
             {/* Direct Email Card */}

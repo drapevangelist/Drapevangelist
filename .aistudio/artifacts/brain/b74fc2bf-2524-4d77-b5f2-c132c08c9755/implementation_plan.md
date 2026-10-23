@@ -14,6 +14,10 @@ An authoritative, full-bleed editorial documentary portfolio for **Mark Chinedum
 > 6. **Testimonials**: Attributed peer and founder testimonials with direct social media profile links.
 > 7. **Latest Updates**: Dynamic timeline of recent ecosystem activities and milestones.
 > 8. **Connect**: Direct communication hub with verified channels (Email, X/Twitter, Telegram, LinkedIn, and inquiry form).
+>
+> **Live Site Editing & Vercel Publishing Separation**:
+> - **In AI Studio (Backend)**: The user can edit all words (Hero, Plate, Bio, Stats, Contact) and visuals (Hero video, plate photo, bio portrait, three pillar plates, field mosaic photos, visual proofs) directly in the UI. They can delete irrelevant information using the curator mode to prevent overcrowding. Edits are persisted to `src/data/persistedContent.json` on disk and `localStorage`.
+> - **On Vercel (Production)**: When deployed to Vercel, the environment detector (`isEditorEnvironment()`) automatically hides all "Edit Content" buttons, "Curate Site" toggles, delete trash cans, add buttons, and curation banners. Public visitors see only the clean, finished product without any edit UI.
 
 ---
 

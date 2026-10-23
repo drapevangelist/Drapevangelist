@@ -3,6 +3,7 @@ import { MASTER_PROOF_OF_WORK } from '../data/portfolioData';
 import { ProofOfWorkCategory } from '../types';
 import { soundEngine } from '../utils/soundEngine';
 import { curationStore } from '../utils/curationStore';
+import { isEditorEnvironment } from '../utils/envUtils';
 import { 
   ShieldCheck, 
   Search, 
@@ -24,13 +25,16 @@ export const ProofOfWorkArchive: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<ProofOfWorkCategory>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [isEditorAllowed] = useState(isEditorEnvironment());
   const [isCurator, setIsCurator] = useState(() => curationStore.isCuratorMode());
   const [hiddenPowIds, setHiddenPowIds] = useState<string[]>(() => curationStore.getHiddenPowIds());
+  const [statsContent, setStatsContent] = useState(() => curationStore.getLiveContent().stats);
 
   useEffect(() => {
     const unsub = curationStore.subscribe(() => {
       setIsCurator(curationStore.isCuratorMode());
       setHiddenPowIds(curationStore.getHiddenPowIds());
+      setStatsContent(curationStore.getLiveContent().stats);
     });
     return unsub;
   }, []);
@@ -102,7 +106,7 @@ export const ProofOfWorkArchive: React.FC = () => {
           </div>
 
           <div className="shrink-0 flex items-center gap-3">
-            {hiddenPowIds.length > 0 && (
+            {isEditorAllowed && hiddenPowIds.length > 0 && (
               <button
                 onClick={() => {
                   soundEngine.playClick();
@@ -126,52 +130,52 @@ export const ProofOfWorkArchive: React.FC = () => {
           {/* Stat 1: Persons Impacted */}
           <div className="p-6 bg-[#131313] relative overflow-hidden group hover:bg-[#1A1A1A] transition-colors">
             <div className="text-[11px] font-mono uppercase tracking-widest text-[#757575] mb-2 font-bold">
-              Persons Impacted
+              {statsContent.stat1Label}
             </div>
             <div className="text-5xl font-oswald font-bold text-[#FFFFFF] group-hover:text-[#D32F2F] transition-colors tabular-nums leading-none">
-              5,000+
+              {statsContent.stat1Num}
             </div>
             <div className="text-xs font-inter text-[#8E9192] mt-3 leading-relaxed">
-              Students, developers & attendees guided across IRL summits & 70+ builders personally onboarded at UniPort.
+              {statsContent.stat1Desc}
             </div>
           </div>
 
           {/* Stat 2: Events Held */}
           <div className="p-6 bg-[#131313] relative overflow-hidden group hover:bg-[#1A1A1A] transition-colors">
             <div className="text-[11px] font-mono uppercase tracking-widest text-[#757575] mb-2 font-bold">
-              Events Held & Coordinated
+              {statsContent.stat2Label}
             </div>
             <div className="text-5xl font-oswald font-bold text-[#FFFFFF] group-hover:text-[#D32F2F] transition-colors tabular-nums leading-none">
-              40+
+              {statsContent.stat2Num}
             </div>
             <div className="text-xs font-inter text-[#8E9192] mt-3 leading-relaxed">
-              Summits, hackathons, and technical meetups across Base, Movement, Rujira, ETHNigeria, SEBGW & UniPort.
+              {statsContent.stat2Desc}
             </div>
           </div>
 
           {/* Stat 3: Ambassador Roles */}
           <div className="p-6 bg-[#131313] relative overflow-hidden group hover:bg-[#1A1A1A] transition-colors">
             <div className="text-[11px] font-mono uppercase tracking-widest text-[#757575] mb-2 font-bold">
-              Ambassador Roles
+              {statsContent.stat3Label}
             </div>
             <div className="text-5xl font-oswald font-bold text-[#FFFFFF] group-hover:text-[#D32F2F] transition-colors tabular-nums leading-none">
-              11
+              {statsContent.stat3Num}
             </div>
             <div className="text-xs font-inter text-[#8E9192] mt-3 leading-relaxed">
-              Archisinal, Eventplace.Ng, Everest Rides, Fruitizo, Hervest, MiniPay, Solana Allstars Ng, Step Finance, Texce, Zedi, 100Pay.
+              {statsContent.stat3Desc}
             </div>
           </div>
 
           {/* Stat 4: Community Partnerships */}
           <div className="p-6 bg-[#131313] relative overflow-hidden group hover:bg-[#1A1A1A] transition-colors">
             <div className="text-[11px] font-mono uppercase tracking-widest text-[#757575] mb-2 font-bold">
-              Community Partnerships
+              {statsContent.stat4Label}
             </div>
             <div className="text-5xl font-oswald font-bold text-[#FFFFFF] group-hover:text-[#D32F2F] transition-colors tabular-nums leading-none">
-              15+
+              {statsContent.stat4Num}
             </div>
             <div className="text-xs font-inter text-[#8E9192] mt-3 leading-relaxed">
-              Active DAO networks including Arbitrum PH, Base Technical, All In DAO, Creative Hub, ETH PH, Superteam NG.
+              {statsContent.stat4Desc}
             </div>
           </div>
         </div>
@@ -400,7 +404,7 @@ export const ProofOfWorkArchive: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
-                      {isCurator && (
+                      {isEditorAllowed && isCurator && (
                         <button
                           type="button"
                           onClick={(e) => {
