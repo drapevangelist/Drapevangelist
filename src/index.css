@@ -2,32 +2,49 @@
 
 @layer base {
   :root {
-    --forest: #0B2E1A;
-    --emerald: #14532D;
-    --lime: #B7F34A;
-    --lime-bright: #CFFF6E;
-    --off: #F5F3E8;
-    --muted: #6B8F71;
-    --near-black: #061F11;
+    --surface: #131313;
+    --surface-stark-black: #0A0A0A;
+    --surface-canvas-white: #FFFFFF;
+    --border-hairline-dark: #262626;
+    --border-hairline-light: #E5E5E5;
+    --text-muted-dark: #757575;
+    --text-muted-light: #8E8E8E;
+    --accent-crimson: #D32F2F;
+    --on-surface: #E5E2E1;
   }
 
   body {
-    background-color: var(--forest);
-    color: var(--off);
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #0A0A0A;
+    color: #E5E2E1;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, h4, .font-display {
-    font-family: 'Space Grotesk', system-ui, sans-serif;
+  h1, h2, h3, h4, .font-oswald, .display-hero, .headline-xl, .headline-lg, .headline-md, .headline-stat {
+    font-family: 'Oswald', -apple-system, sans-serif;
   }
+
+  .font-inter {
+    font-family: 'Inter', -apple-system, sans-serif;
+  }
+
+  .font-mono-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+}
+
+/* Sharp orthogonal discipline - 0px border radius default */
+button, input, select, textarea, .sharp-card {
+  border-radius: 0 !important;
 }
 
 @keyframes eq {
   0%, 100% {
-    height: 6px;
+    height: 4px;
   }
   50% {
-    height: 20px;
+    height: 18px;
   }
 }
 
@@ -43,19 +60,18 @@
   animation: eq 0.9s ease-in-out infinite 0.4s;
 }
 
-/* Custom scrollbar */
+/* Broadsheet custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0B2E1A;
+  background: #0A0A0A;
 }
 ::-webkit-scrollbar-thumb {
-  background: #14532D;
-  border-radius: 4px;
-  border: 1px solid rgba(183, 243, 74, 0.2);
+  background: #262626;
+  border-radius: 0;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #1e6d3d;
+  background: #D32F2F;
 }
-

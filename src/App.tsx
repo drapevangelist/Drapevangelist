@@ -1,67 +1,94 @@
-import React, { useState, useEffect } from 'react';
-import { PageMode, ProjectItem } from './types';
+import React, { useEffect } from 'react';
+import { EditorialNavbar } from './components/EditorialNavbar';
+import { FullPageHeroVideo } from './components/FullPageHeroVideo';
+import { HeroDocumentaryPlate } from './components/HeroDocumentaryPlate';
+import { EditorialBioSection } from './components/EditorialBioSection';
+import { ChaptersSection } from './components/ChaptersSection';
+import { ProofOfWorkArchive } from './components/ProofOfWorkArchive';
+import { PhotoMosaicSection } from './components/PhotoMosaicSection';
+import { VisualProofsSection } from './components/VisualProofsSection';
+import { SocialTestimonialsSection } from './components/SocialTestimonialsSection';
+import { LatestUpdatesSection } from './components/LatestUpdatesSection';
+import { ArchivalAiAgentSection } from './components/ArchivalAiAgentSection';
+import { EditorialContactSection } from './components/EditorialContactSection';
+import { EditorialFooter } from './components/EditorialFooter';
 import { soundEngine } from './utils/soundEngine';
-import { Preloader } from './components/Preloader';
-import { Navbar } from './components/Navbar';
-import { AudioToggle } from './components/AudioToggle';
-import { Web3View } from './components/Web3View';
-import { Web2View } from './components/Web2View';
-import { ProjectModal } from './components/ProjectModal';
-import { ContactSection } from './components/ContactSection';
-import { Footer } from './components/Footer';
 
 export default function App() {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [currentPage, setCurrentPage] = useState<PageMode>('web3');
-  const [selectedProject, setSelectedProject] = useState<ProjectItem | null>(null);
-
   useEffect(() => {
-    // Autostart music on page load
+    // Autostart quiet ambient sound engine on first user interaction
     soundEngine.autoStart();
   }, []);
 
-  const scrollToContact = () => {
-    const el = document.getElementById('contact');
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#0B2E1A] text-[#F5F3E8] relative flex flex-col font-sans selection:bg-[#B7F34A] selection:text-[#0B2E1A]">
-      {/* 0-100% Preloader on first load */}
-      {!isLoaded && <Preloader onComplete={() => setIsLoaded(true)} />}
-
-      {/* Sticky Top Navigation with dual-mode switch */}
-      <Navbar
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
-        onOpenContact={scrollToContact}
+    <div className="min-h-screen bg-[#0A0A0A] text-[#E5E2E1] relative flex flex-col font-inter selection:bg-[#D32F2F] selection:text-white">
+      {/* Editorial Top Bar Navigation */}
+      <EditorialNavbar
+        onOpenContact={() => scrollTo('contact')}
       />
 
-      {/* Main Dynamic View Content (Web3 or Web2) */}
+      {/* Main Single-Page Sequential Flow */}
       <main className="flex-1">
-        {currentPage === 'web3' ? (
-          <Web3View onSelectProject={setSelectedProject} />
-        ) : (
-          <Web2View onSelectProject={setSelectedProject} />
-        )}
+        {/* 1. Full page video playing on mute with Mark Chinedum Daniel, DRAPEVANGELIST, Community Operations Manager */}
+        <FullPageHeroVideo
+          onScrollToBio={() => scrollTo('hero-plate')}
+          onOpenContact={() => scrollTo('contact')}
+        />
 
-        {/* Shared Contact Card */}
-        <ContactSection id="contact" />
+        {/* 1b. Broadsheet Archival Dispatch Plate */}
+        <div id="hero-plate">
+          <HeroDocumentaryPlate
+            onScrollToLedger={() => scrollTo('proof-of-work')}
+            onScrollToAi={() => scrollTo('ai-agent')}
+          />
+        </div>
+
+        {/* 2. Scrolling down: Bio Section */}
+        <EditorialBioSection
+          onExploreChapters={() => scrollTo('chapters')}
+          onExploreProof={() => scrollTo('proof-of-work')}
+        />
+
+        {/* 3. Chapters: Education, Certificates, Events, Posts Held + Seven Chapters Timeline */}
+        <ChaptersSection
+          onScrollToProof={() => scrollTo('proof-of-work')}
+        />
+
+        {/* 4. Proof of Work: Impact stats + Verified Public Metrics 6-number board + 71 Records */}
+        <ProofOfWorkArchive />
+
+        {/* 5. Photojournalistic Mosaic: "Most Weeks, A Different Community" */}
+        <div id="photo-mosaic">
+          <PhotoMosaicSection
+            onScrollToGallery={() => scrollTo('visual-proofs')}
+          />
+        </div>
+
+        {/* 5b. Visual Proofs: Filterable Media Grid with High-Res Lightbox & Upload/Link Manager */}
+        <VisualProofsSection />
+
+        {/* 6. Testimonials with links from social media */}
+        <SocialTestimonialsSection />
+
+        {/* 7. Latest Updates: Timeline of important activities */}
+        <LatestUpdatesSection />
+
+        {/* 7b. "Ask Anything. Get Answers Fast." Archival AI Agent Terminal */}
+        <ArchivalAiAgentSection />
+
+        {/* 8. Connect Page & Closing Manifesto */}
+        <EditorialContactSection />
       </main>
 
-      {/* Bottom Left Floating Audio Toggle & Equalizer */}
-      <AudioToggle />
-
-      {/* Footer */}
-      <Footer />
-
-      {/* Project Deep Dive Modal */}
-      <ProjectModal
-        project={selectedProject}
-        onClose={() => setSelectedProject(null)}
-      />
+      {/* Editorial Footer */}
+      <EditorialFooter />
     </div>
   );
 }
