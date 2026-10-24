@@ -16,6 +16,61 @@ async function startServer() {
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
   const contentFilePath = path.resolve(__dirname, 'src/data/persistedContent.json');
+  const uploadsDir = path.resolve(__dirname, 'public/uploads');
+
+  // Ensure uploads directory exists
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+
+  // Statically serve uploaded media
+  app.use('/uploads', express.static(uploadsDir));
+
+  // API Route: Upload Image or Media File to disk
+  app.post('/api/upload', (req, res) => {
+    try {
+      const { data, filename } = req.body;
+      if (!data) {
+        return res.status(400).json({ error: 'No image data payload provided' });
+      }
+
+      // Parse data URL format: data:<mime>;base64,<encoded-data>
+      const matches = data.match(/^data:([A-Za-z0-9-+/]+);base64,(.+)$/);
+      let buffer: Buffer;
+      let ext = 'jpg';
+
+      if (matches && matches.length === 3) {
+        const detectedMime = matches[1];
+        if (detectedMime.includes('png')) ext = 'png';
+        else if (detectedMime.includes('webp')) ext = 'webp';
+        else if (detectedMime.includes('gif')) ext = 'gif';
+        else if (detectedMime.includes('mp4')) ext = 'mp4';
+        else if (detectedMime.includes('webm')) ext = 'webm';
+        else ext = 'jpg';
+        buffer = Buffer.from(matches[2], 'base64');
+      } else {
+        buffer = Buffer.from(data, 'base64');
+      }
+
+      const rawName = filename
+        ? path.basename(filename).replace(/[^a-zA-Z0-9.-]/g, '_').toLowerCase()
+        : `image.${ext}`;
+      const uniqueFilename = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}-${rawName}`;
+      const targetFilePath = path.join(uploadsDir, uniqueFilename);
+
+      fs.writeFileSync(targetFilePath, buffer);
+      console.log(`[Upload Success]: Saved image to ${targetFilePath}`);
+
+      return res.json({
+        success: true,
+        url: `/uploads/${uniqueFilename}`,
+        filename: uniqueFilename,
+      });
+    } catch (err: any) {
+      console.error('[API Error in /api/upload]:', err);
+      return res.status(500).json({ error: err.message || 'Failed to process file upload' });
+    }
+  });
 
   // API Route: Save edited content to disk
   app.post('/api/save-content', (req, res) => {

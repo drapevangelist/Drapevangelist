@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, Check, Copy, Download, Upload, AlertCircle, Sparkles, Globe, Eye } from 'lucide-react';
 import { soundEngine } from '../utils/soundEngine';
 import { curationStore, PersistedContentType } from '../utils/curationStore';
+import { uploadImageFile } from '../utils/imageUploadHelper';
 
 interface LiveContentEditorModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export const LiveContentEditorModal: React.FC<LiveContentEditorModalProps> = ({
   const [content, setContent] = useState<PersistedContentType>(() => curationStore.getLiveContent());
   const [isSaved, setIsSaved] = useState(false);
   const [copiedJson, setCopiedJson] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -55,18 +57,28 @@ export const LiveContentEditorModal: React.FC<LiveContentEditorModalProps> = ({
     downloadAnchor.remove();
   };
 
-  const handleFileUpload = (
+  const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    onUrl: (dataUrl: string) => void
+    onUrl: (uploadedUrl: string) => void
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      onUrl(result);
-    };
-    reader.readAsDataURL(file);
+
+    setUploadStatus('Uploading & optimizing image...');
+    try {
+      const res = await uploadImageFile(file);
+      if (res.success && res.url) {
+        onUrl(res.url);
+        setUploadStatus('Image uploaded!');
+        setTimeout(() => setUploadStatus(null), 2500);
+      } else {
+        setUploadStatus('Upload failed. Try another image.');
+        setTimeout(() => setUploadStatus(null), 3500);
+      }
+    } catch {
+      setUploadStatus('Error uploading image.');
+      setTimeout(() => setUploadStatus(null), 3000);
+    }
   };
 
   return (
@@ -93,6 +105,12 @@ export const LiveContentEditorModal: React.FC<LiveContentEditorModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {uploadStatus && (
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 bg-[#D32F2F]/20 border border-[#D32F2F] text-[#FFFFFF] text-[11px] font-mono animate-pulse">
+                <span className="w-1.5 h-1.5 bg-[#D32F2F] rounded-full"></span>
+                {uploadStatus}
+              </span>
+            )}
             <button
               onClick={handleSave}
               className="px-4 py-1.5 bg-[#FFFFFF] hover:bg-[#E5E2E1] text-[#0A0A0A] font-inter font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer border border-[#FFFFFF]"
@@ -212,7 +230,38 @@ export const LiveContentEditorModal: React.FC<LiveContentEditorModalProps> = ({
 
               <div>
                 <label className="block text-xs font-mono uppercase text-[#757575] font-bold mb-1">
-                  Background Video Loop URL (MP4)
+                  Full-Screen Hero Portrait Photo URL
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={content.hero.imageUrl || ''}
+                    onChange={(e) =>
+                      setContent({ ...content, hero: { ...content.hero, imageUrl: e.target.value } })
+                    }
+                    placeholder="https://... or upload from device"
+                    className="flex-1 px-3 py-2 bg-[#0A0A0A] border border-[#262626] text-[#FFFFFF] font-mono focus:border-[#D32F2F] focus:outline-none"
+                  />
+                  <label className="px-3 py-2 bg-[#1A1A1A] hover:bg-[#20201F] border border-[#262626] text-[#FFFFFF] font-mono uppercase text-[11px] cursor-pointer flex items-center gap-1.5 shrink-0">
+                    <Upload className="w-3.5 h-3.5 text-[#D32F2F]" />
+                    <span>Upload</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) =>
+                        handleFileUpload(e, (url) =>
+                          setContent({ ...content, hero: { ...content.hero, imageUrl: url } })
+                        )
+                      }
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-mono uppercase text-[#757575] font-bold mb-1">
+                  Background Video Loop URL (Optional MP4 stream)
                 </label>
                 <input
                   type="url"

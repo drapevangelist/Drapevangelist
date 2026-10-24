@@ -23,6 +23,7 @@ import {
 import { soundEngine } from '../utils/soundEngine';
 import { curationStore } from '../utils/curationStore';
 import { isEditorEnvironment } from '../utils/envUtils';
+import { uploadImageFile } from '../utils/imageUploadHelper';
 
 export const VisualProofsSection: React.FC = () => {
   const [isEditorAllowed] = useState(isEditorEnvironment());
@@ -40,6 +41,7 @@ export const VisualProofsSection: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [inputType, setInputType] = useState<'upload' | 'url'>('upload');
+  const [isUploading, setIsUploading] = useState(false);
   
   // Form fields
   const [newTitle, setNewTitle] = useState('');
@@ -114,7 +116,7 @@ export const VisualProofsSection: React.FC = () => {
     setActiveMedia(filteredItems[nextIndex]);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -124,13 +126,22 @@ export const VisualProofsSection: React.FC = () => {
       setNewMediaType('image');
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      setFilePreview(result);
-      setNewMediaUrl(result);
-    };
-    reader.readAsDataURL(file);
+    setIsUploading(true);
+    setFormError(null);
+
+    try {
+      const res = await uploadImageFile(file);
+      if (res.success && res.url) {
+        setFilePreview(res.url);
+        setNewMediaUrl(res.url);
+      } else {
+        setFormError(res.error || 'Failed to process file. Please try another image.');
+      }
+    } catch (err: any) {
+      setFormError(err.message || 'Error uploading image.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleAddSubmit = (e: React.FormEvent) => {
@@ -602,13 +613,22 @@ export const VisualProofsSection: React.FC = () => {
                       onChange={handleFileChange}
                       className="w-full text-xs text-[#FFFFFF] file:mr-3 file:py-2 file:px-3 file:border-0 file:text-xs file:font-mono file:bg-[#FFFFFF] file:text-[#0A0A0A] file:font-bold hover:file:bg-[#E5E2E1] cursor-pointer bg-[#0A0A0A] p-2 border border-[#262626]"
                     />
-                    {filePreview && (
-                      <div className="mt-3 relative border border-[#262626] overflow-hidden bg-black max-h-48 flex items-center justify-center">
+                    {isUploading && (
+                      <div className="mt-3 p-4 bg-[#141414] border border-[#D32F2F] flex items-center justify-center gap-3">
+                        <span className="w-4 h-4 border-2 border-[#D32F2F] border-t-transparent rounded-full animate-spin"></span>
+                        <span className="font-mono text-xs text-[#E5E2E1] font-bold">Compressing & Uploading Media to Server...</span>
+                      </div>
+                    )}
+                    {!isUploading && filePreview && (
+                      <div className="mt-3 relative border border-[#262626] overflow-hidden bg-black max-h-48 flex items-center justify-center group">
                         {newMediaType === 'video' ? (
                           <video src={filePreview} controls className="max-h-48 object-contain" />
                         ) : (
                           <img src={filePreview} alt="Preview" className="max-h-48 object-contain" />
                         )}
+                        <span className="absolute top-2 right-2 bg-[#D32F2F] text-white text-[10px] font-mono px-2 py-0.5 uppercase tracking-wider font-bold">
+                          Ready to Publish
+                        </span>
                       </div>
                     )}
                   </div>

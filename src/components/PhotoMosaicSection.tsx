@@ -3,6 +3,7 @@ import { ArrowUpRight, Plus, Trash2, X, Upload, Link as LinkIcon, RotateCcw, Max
 import { soundEngine } from '../utils/soundEngine';
 import { curationStore } from '../utils/curationStore';
 import { isEditorEnvironment } from '../utils/envUtils';
+import { uploadImageFile } from '../utils/imageUploadHelper';
 import { MosaicItem } from '../types';
 
 interface PhotoMosaicSectionProps {
@@ -18,6 +19,7 @@ export const PhotoMosaicSection: React.FC<PhotoMosaicSectionProps> = ({ onScroll
   // Add Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [inputType, setInputType] = useState<'upload' | 'url'>('upload');
+  const [isUploading, setIsUploading] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newKicker, setNewKicker] = useState('');
   const [newLocation, setNewLocation] = useState('');
@@ -45,16 +47,26 @@ export const PhotoMosaicSection: React.FC<PhotoMosaicSectionProps> = ({ onScroll
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const res = reader.result as string;
-      setFilePreview(res);
-      setNewImageUrl(res);
-    };
-    reader.readAsDataURL(file);
+
+    setIsUploading(true);
+    setFormError(null);
+
+    try {
+      const res = await uploadImageFile(file);
+      if (res.success && res.url) {
+        setFilePreview(res.url);
+        setNewImageUrl(res.url);
+      } else {
+        setFormError(res.error || 'Failed to process file. Please try another image.');
+      }
+    } catch (err: any) {
+      setFormError(err.message || 'Error uploading image.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleAddSubmit = (e: React.FormEvent) => {
@@ -391,9 +403,18 @@ export const PhotoMosaicSection: React.FC<PhotoMosaicSectionProps> = ({ onScroll
                       onChange={handleFileChange}
                       className="w-full text-xs text-[#FFFFFF] file:mr-3 file:py-2 file:px-3 file:border-0 file:text-xs file:font-mono file:bg-[#FFFFFF] file:text-[#0A0A0A] file:font-bold hover:file:bg-[#E5E2E1] cursor-pointer bg-[#0A0A0A] p-2 border border-[#262626]"
                     />
-                    {filePreview && (
-                      <div className="mt-3 relative border border-[#262626] overflow-hidden bg-black max-h-40 flex items-center justify-center">
+                    {isUploading && (
+                      <div className="mt-3 p-4 bg-[#141414] border border-[#D32F2F] flex items-center justify-center gap-3">
+                        <span className="w-4 h-4 border-2 border-[#D32F2F] border-t-transparent rounded-full animate-spin"></span>
+                        <span className="font-mono text-xs text-[#E5E2E1] font-bold">Compressing & Uploading Photo...</span>
+                      </div>
+                    )}
+                    {!isUploading && filePreview && (
+                      <div className="mt-3 relative border border-[#262626] overflow-hidden bg-black max-h-40 flex items-center justify-center group">
                         <img src={filePreview} alt="Preview" className="max-h-40 object-contain" />
+                        <span className="absolute top-2 right-2 bg-[#D32F2F] text-white text-[10px] font-mono px-2 py-0.5 uppercase tracking-wider font-bold">
+                          Ready to Publish
+                        </span>
                       </div>
                     )}
                   </div>

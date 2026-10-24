@@ -367,10 +367,18 @@ export const ProofOfWorkArchive: React.FC = () => {
                       : 'bg-[#131313] border-[#262626] hover:border-[#444748]'
                   }`}
                 >
-                  {/* Row Header (Clickable) */}
-                  <button
+                  {/* Row Header (Clickable div to prevent nested button HTML error) */}
+                  <div
+                    role="button"
+                    tabIndex={0}
                     onClick={() => toggleExpand(item.id)}
-                    className="w-full text-left p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleExpand(item.id);
+                      }
+                    }}
+                    className="w-full text-left p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer select-none"
                   >
                     <div className="flex-1 min-w-0">
                       {/* Zero-Pill Unboxed Metadata */}
@@ -429,7 +437,7 @@ export const ProofOfWorkArchive: React.FC = () => {
                         )}
                       </div>
                     </div>
-                  </button>
+                  </div>
 
                   {/* Expanded Dossier Details */}
                   {isExpanded && (

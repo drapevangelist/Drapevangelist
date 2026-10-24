@@ -216,15 +216,28 @@ export const curationStore = {
     const list = this.getHiddenProofIds();
     if (!list.includes(id)) {
       list.push(id);
-      localStorage.setItem(KEYS.HIDDEN_PROOFS, JSON.stringify(list));
+      try {
+        localStorage.setItem(KEYS.HIDDEN_PROOFS, JSON.stringify(list));
+      } catch {
+        // Safe
+      }
     }
     const custom = this.getCustomProofs().filter((p) => p.id !== id);
-    localStorage.setItem(KEYS.CUSTOM_PROOFS, JSON.stringify(custom));
+    try {
+      localStorage.setItem(KEYS.CUSTOM_PROOFS, JSON.stringify(custom));
+    } catch {
+      // Safe
+    }
     emitChange();
+    syncToServer({ customProofs: custom });
   },
 
   restoreProofs() {
-    localStorage.removeItem(KEYS.HIDDEN_PROOFS);
+    try {
+      localStorage.removeItem(KEYS.HIDDEN_PROOFS);
+    } catch {
+      // Safe
+    }
     emitChange();
   },
 
@@ -240,8 +253,13 @@ export const curationStore = {
   addCustomProof(item: VisualProofItem) {
     const list = this.getCustomProofs();
     const updated = [item, ...list];
-    localStorage.setItem(KEYS.CUSTOM_PROOFS, JSON.stringify(updated));
+    try {
+      localStorage.setItem(KEYS.CUSTOM_PROOFS, JSON.stringify(updated));
+    } catch (err) {
+      console.warn('[LocalStorage Quota or Unavailable, syncing to server]:', err);
+    }
     emitChange();
+    syncToServer({ customProofs: updated });
   },
 
   // PHOTO MOSAIC
@@ -261,10 +279,11 @@ export const curationStore = {
   saveMosaicItems(items: MosaicItem[]) {
     try {
       localStorage.setItem(KEYS.MOSAIC_ITEMS, JSON.stringify(items));
-      emitChange();
-    } catch {
-      // Storage unavailable
+    } catch (err) {
+      console.warn('[LocalStorage Quota or Unavailable, syncing to server]:', err);
     }
+    emitChange();
+    syncToServer({ mosaicItems: items });
   },
 
   addMosaicItem(item: MosaicItem) {
@@ -282,10 +301,11 @@ export const curationStore = {
   resetMosaic() {
     try {
       localStorage.removeItem(KEYS.MOSAIC_ITEMS);
-      emitChange();
     } catch {
-      // Storage unavailable
+      // Safe
     }
+    emitChange();
+    syncToServer({ mosaicItems: STARTER_MOSAIC_ITEMS });
   },
 
   // CHAPTERS

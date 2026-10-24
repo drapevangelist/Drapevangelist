@@ -17,6 +17,10 @@ export const EditorialNavbar: React.FC<EditorialNavbarProps> = ({ onOpenContact 
   const [isCurator, setIsCurator] = useState(curationStore.isCuratorMode());
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [isEditorModalOpen, setIsEditorModalOpen] = useState(false);
+  const [userPortrait, setUserPortrait] = useState(() => {
+    const content = curationStore.getLiveContent();
+    return content.bio?.portraitUrl || content.hero?.imageUrl || '/assets/ambassador.jpg';
+  });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -28,6 +32,8 @@ export const EditorialNavbar: React.FC<EditorialNavbarProps> = ({ onOpenContact 
     });
     const unsubCurator = curationStore.subscribe(() => {
       setIsCurator(curationStore.isCuratorMode());
+      const content = curationStore.getLiveContent();
+      setUserPortrait(content.bio?.portraitUrl || content.hero?.imageUrl || '/assets/ambassador.jpg');
     });
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -60,8 +66,8 @@ export const EditorialNavbar: React.FC<EditorialNavbarProps> = ({ onOpenContact 
             : 'bg-[#0A0A0A] border-b border-[#262626]'
         }`}
       >
-        <div className="max-w-[1240px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          {/* Zone 1: Official Crest / Logo, Wordmark & Tagline */}
+        <div className="max-w-[1240px] mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
+          {/* Top Left: User's image in a circular logo & drapevangelist right beside it */}
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
@@ -69,25 +75,29 @@ export const EditorialNavbar: React.FC<EditorialNavbarProps> = ({ onOpenContact 
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               className="flex items-center gap-3 text-left group cursor-pointer"
+              aria-label="drapevangelist home"
             >
-              <img
-                src="/assets/logo.jpg"
-                alt="Drapevangelist Official Crest"
-                className="h-9 w-9 object-cover border border-[#262626]"
-              />
-              <div>
-                <span className="text-base sm:text-lg font-oswald uppercase font-bold tracking-wider text-[#FFFFFF] group-hover:text-[#D32F2F] transition-colors block leading-tight">
-                  DRAP EVANGELIST
+              <div className="relative shrink-0">
+                <img
+                  src={userPortrait}
+                  alt="drapevangelist"
+                  className="h-10 w-10 sm:h-11 sm:w-11 rounded-full object-cover object-top border-2 border-[#D32F2F] group-hover:border-[#FFFFFF] transition-all duration-300 ring-2 ring-[#0A0A0A] shadow-md"
+                />
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#D32F2F] rounded-full border-2 border-[#0A0A0A]" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xl sm:text-2xl font-oswald uppercase font-bold tracking-tight text-[#FFFFFF] group-hover:text-[#D32F2F] transition-colors leading-none">
+                  drapevangelist
                 </span>
-                <span className="text-[10px] font-mono tracking-widest uppercase text-[#757575] block">
-                  Official Archive // 2022—2026
+                <span className="text-[10px] font-mono tracking-widest uppercase text-[#8E9192] leading-tight mt-1">
+                  Community Operations
                 </span>
               </div>
             </button>
           </div>
 
-          {/* Zone 2: Editorial Navigation Links (Desktop) */}
-          <nav className="hidden lg:flex items-center gap-5 text-xs uppercase tracking-wider font-medium text-[#C4C7C7]">
+          {/* Center: Quick Desktop Navigation Links */}
+          <nav className="hidden xl:flex items-center gap-5 text-xs uppercase tracking-wider font-medium text-[#C4C7C7]">
             <button
               onClick={() => navTo('bio')}
               className="hover:text-[#FFFFFF] transition-colors py-1 cursor-pointer"
@@ -120,23 +130,10 @@ export const EditorialNavbar: React.FC<EditorialNavbarProps> = ({ onOpenContact 
             </button>
             <button
               onClick={() => navTo('ai-agent')}
-              className="hover:text-[#FFFFFF] transition-colors py-1 cursor-pointer text-[#FFFFFF] font-bold flex items-center gap-1.5 border border-[#262626] px-2 py-0.5 bg-[#141414]"
+              className="hover:text-[#FFFFFF] transition-colors py-1 cursor-pointer text-[#FFFFFF] font-bold flex items-center gap-1.5 border border-[#262626] px-2.5 py-0.5 bg-[#141414]"
             >
               <Sparkles className="w-3 h-3 text-[#D32F2F]" />
               <span>Ask AI</span>
-              <span className="w-1.5 h-1.5 bg-[#D32F2F] animate-pulse"></span>
-            </button>
-            <button
-              onClick={() => navTo('testimonials')}
-              className="hover:text-[#FFFFFF] transition-colors py-1 cursor-pointer"
-            >
-              Endorsements
-            </button>
-            <button
-              onClick={() => navTo('updates')}
-              className="hover:text-[#FFFFFF] transition-colors py-1 cursor-pointer"
-            >
-              Updates
             </button>
             <button
               onClick={() => navTo('contact')}
@@ -146,7 +143,7 @@ export const EditorialNavbar: React.FC<EditorialNavbarProps> = ({ onOpenContact 
             </button>
           </nav>
 
-          {/* Zone 3: Actions + Audio Toggle + Mobile Menu Trigger */}
+          {/* Top Right: Sound toggle, Editor Controls (if in Studio), and Prominent Menu Button */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Ambient Sound Toggle */}
             <button
@@ -168,13 +165,7 @@ export const EditorialNavbar: React.FC<EditorialNavbarProps> = ({ onOpenContact 
               )}
             </button>
 
-            {/* Active Dispatch Badge */}
-            <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 bg-[#141414] border border-[#262626] text-[11px] font-mono text-[#C4C7C7]">
-              <span className="w-2 h-2 bg-[#D32F2F] animate-pulse"></span>
-              <span className="uppercase text-[10px] tracking-wider text-[#FFFFFF] font-bold">Active Dispatch</span>
-            </div>
-
-            {/* AI Studio Backend Editor Controls - Hidden completely on Vercel / Live Production */}
+            {/* AI Studio Backend Editor Controls - Hidden completely on Vercel */}
             {isEditorAllowed && (
               <>
                 <button
@@ -192,7 +183,6 @@ export const EditorialNavbar: React.FC<EditorialNavbarProps> = ({ onOpenContact 
                   </span>
                 </button>
 
-                {/* Curator / Edit Mode Toggle Button */}
                 <button
                   onClick={() => {
                     soundEngine.playClick();
@@ -215,25 +205,18 @@ export const EditorialNavbar: React.FC<EditorialNavbarProps> = ({ onOpenContact 
               </>
             )}
 
-            {/* Desktop Connect Button */}
+            {/* Menu Button at the Top Right (Works on all viewports) */}
             <button
               onClick={() => {
                 soundEngine.playClick();
-                onOpenContact();
+                setMobileMenuOpen(!mobileMenuOpen);
               }}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-[#0A0A0A] bg-[#FFFFFF] hover:bg-[#E5E2E1] transition-colors whitespace-nowrap cursor-pointer border border-[#FFFFFF]"
+              className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-mono uppercase tracking-wider text-[#FFFFFF] hover:text-[#0A0A0A] bg-[#141414] hover:bg-[#FFFFFF] border border-[#262626] hover:border-[#FFFFFF] transition-all cursor-pointer font-bold shadow-sm"
+              aria-label="Open Navigation Menu"
+              title="Open Navigation Menu"
             >
-              <span>Get In Touch</span>
-              <ArrowUpRight className="h-3.5 w-3.5" />
-            </button>
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 text-[#FFFFFF] hover:text-[#D32F2F] bg-[#141414] border border-[#262626] transition-colors cursor-pointer"
-              aria-label="Open mobile menu"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              <span className="text-[11px] sm:text-xs">Menu</span>
+              {mobileMenuOpen ? <X className="w-4 h-4 text-[#D32F2F]" /> : <Menu className="w-4 h-4" />}
             </button>
           </div>
         </div>
@@ -311,21 +294,31 @@ export const EditorialNavbar: React.FC<EditorialNavbarProps> = ({ onOpenContact 
         </div>
       )}
 
-      {/* Mobile Drawer (Broadsheet Dossier Menu) */}
+      {/* Broadsheet Dossier Menu Drawer (Works on all viewports) */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-[#0A0A0A]/98 backdrop-blur-xl flex flex-col p-6 pt-20 border-l border-[#262626] animate-in fade-in duration-200">
-          <div className="flex items-center justify-between pb-6 border-b border-[#262626]">
-            <div>
-              <div className="text-xs font-mono uppercase tracking-widest text-[#D32F2F] font-bold">Archival Index</div>
-              <div className="font-oswald text-2xl font-bold uppercase text-[#FFFFFF] tracking-wide">DRAP EVANGELIST</div>
+        <div className="fixed inset-0 z-50 bg-[#0A0A0A]/95 backdrop-blur-xl flex flex-col p-6 sm:p-10 pt-16 sm:pt-20 border-l border-[#262626] animate-in fade-in duration-200 overflow-y-auto">
+          <div className="max-w-3xl w-full mx-auto flex items-center justify-between pb-6 border-b border-[#262626]">
+            <div className="flex items-center gap-3">
+              <img
+                src={userPortrait}
+                alt="drapevangelist"
+                className="w-10 h-10 rounded-full object-cover object-top border-2 border-[#D32F2F]"
+              />
+              <div>
+                <div className="text-xs font-mono uppercase tracking-widest text-[#D32F2F] font-bold">Archival Index</div>
+                <div className="font-oswald text-2xl font-bold uppercase text-[#FFFFFF] tracking-wide">DRAP EVANGELIST</div>
+              </div>
             </div>
             <button
               onClick={() => setMobileMenuOpen(false)}
-              className="p-2 border border-[#262626] bg-[#141414] text-[#FFFFFF]"
+              className="p-2 border border-[#262626] bg-[#141414] hover:bg-[#20201F] text-[#FFFFFF] hover:text-[#D32F2F] transition-colors cursor-pointer"
+              aria-label="Close menu"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
+
+          <div className="max-w-3xl w-full mx-auto flex-1 flex flex-col justify-between py-6">
 
           <nav className="flex-1 flex flex-col justify-center space-y-3 py-6 font-oswald text-xl uppercase tracking-wider">
             {[
@@ -390,6 +383,7 @@ export const EditorialNavbar: React.FC<EditorialNavbarProps> = ({ onOpenContact 
             >
               Initiate Contact (drapevangelist@gmail.com)
             </button>
+          </div>
           </div>
         </div>
       )}

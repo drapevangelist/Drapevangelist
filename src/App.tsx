@@ -36,25 +36,25 @@ export default function App() {
 
       {/* Main Single-Page Sequential Flow */}
       <main className="flex-1">
-        {/* 1. Full page video playing on mute with Mark Chinedum Daniel, DRAPEVANGELIST, Community Operations Manager */}
+        {/* 1. Full-screen hero image on load with Mark Chinedum Daniel, DRAPEVANGELIST, Community Operations Manager */}
         <FullPageHeroVideo
-          onScrollToBio={() => scrollTo('hero-plate')}
+          onScrollToBio={() => scrollTo('bio')}
           onOpenContact={() => scrollTo('contact')}
         />
 
-        {/* 1b. Broadsheet Archival Dispatch Plate */}
-        <div id="hero-plate">
+        {/* 2. Scrolling down: Image moves up to reveal Bio Section */}
+        <EditorialBioSection
+          onExploreChapters={() => scrollTo('chapters')}
+          onExploreProof={() => scrollTo('proof-of-work')}
+        />
+
+        {/* 2b. Another image at the end of the bio: Featured Documentary Dispatch Plate */}
+        <div id="bio-plate">
           <HeroDocumentaryPlate
             onScrollToLedger={() => scrollTo('proof-of-work')}
             onScrollToAi={() => scrollTo('ai-agent')}
           />
         </div>
-
-        {/* 2. Scrolling down: Bio Section */}
-        <EditorialBioSection
-          onExploreChapters={() => scrollTo('chapters')}
-          onExploreProof={() => scrollTo('proof-of-work')}
-        />
 
         {/* 3. Chapters: Education, Certificates, Events, Posts Held + Seven Chapters Timeline */}
         <ChaptersSection
