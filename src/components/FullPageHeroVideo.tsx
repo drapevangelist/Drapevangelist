@@ -53,9 +53,9 @@ export const FullPageHeroVideo: React.FC<FullPageHeroVideoProps> = ({
 
   // User's full-screen image fallback
   const heroImageUrl =
-    heroContent.imageUrl ||
-    curationStore.getLiveContent().bio.portraitUrl ||
-    'https://lh3.googleusercontent.com/aida/AEtjO1VznS8ccb9Y8azNd-tdmzBuk9nfR-NWhnMZGOgOfE9ypHtzAc0crWqeqvz6n0M287VRu1Bt41BZ6IGhQjMHdLkq-9foQTzfhU_08jPfc2rOQwdgOG5ZtPou1KNCePFTixcyMw5WAyFqD9MHDHb0Xj6W301dz3wFzDUX5sT5sFKP1CBuEGaNpcEzKj932fhz2zeZHHwtYJmA-0P6jvVQAcL_EhrmeVDHqZ7LWw_pTmVeOgtutgR0pRi1xg';
+    heroContent.imageUrl && !heroContent.imageUrl.includes('lh3.googleusercontent.com/aida/')
+      ? heroContent.imageUrl
+      : '/assets/portrait.jpg';
 
   useEffect(() => {
     const unsub = curationStore.subscribe(() => {
@@ -119,6 +119,9 @@ export const FullPageHeroVideo: React.FC<FullPageHeroVideoProps> = ({
           <img
             src={heroImageUrl}
             alt="Mark Chinedum Daniel (Drapevangelist)"
+            onError={(e) => {
+              e.currentTarget.src = '/assets/portrait.jpg';
+            }}
             className="w-full h-full object-cover object-top sm:object-center filter grayscale contrast-125 brightness-90 hover:grayscale-0 transition-all duration-1000 scale-100"
           />
         </div>

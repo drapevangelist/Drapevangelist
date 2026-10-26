@@ -62,8 +62,11 @@ export const EditorialBioSection: React.FC<EditorialBioSectionProps> = ({
             <div className="relative border border-[#262626] bg-[#131313] p-4">
               <div className="aspect-[4/5] relative bg-[#0A0A0A] overflow-hidden border border-[#262626]">
                 <img
-                  src={bio.portraitUrl}
+                  src={bio.portraitUrl && !bio.portraitUrl.includes('lh3.googleusercontent.com/aida/') ? bio.portraitUrl : '/assets/portrait.jpg'}
                   alt="Mark Chinedum Daniel (Drapevangelist)"
+                  onError={(e) => {
+                    e.currentTarget.src = '/assets/portrait.jpg';
+                  }}
                   className="w-full h-full object-cover object-center filter grayscale contrast-125 brightness-95 hover:grayscale-0 transition-all duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent" />
@@ -103,8 +106,11 @@ export const EditorialBioSection: React.FC<EditorialBioSectionProps> = ({
                 <div className="border border-[#262626] bg-[#0A0A0A] p-2 flex flex-col group">
                   <div className="aspect-square overflow-hidden bg-[#141414] mb-2">
                     <img
-                      src={bio.ambassadorImage}
+                      src={bio.ambassadorImage || '/assets/portrait.jpg'}
                       alt="Mark - Global Ambassador"
+                      onError={(e) => {
+                        e.currentTarget.src = '/assets/portrait.jpg';
+                      }}
                       className="w-full h-full object-cover filter grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
                     />
                   </div>
@@ -116,8 +122,11 @@ export const EditorialBioSection: React.FC<EditorialBioSectionProps> = ({
                 <div className="border border-[#262626] bg-[#0A0A0A] p-2 flex flex-col group">
                   <div className="aspect-square overflow-hidden bg-[#141414] mb-2">
                     <img
-                      src={bio.musicianImage}
+                      src={bio.musicianImage || '/assets/musician.jpg'}
                       alt="Mark - Recording Artist"
+                      onError={(e) => {
+                        e.currentTarget.src = '/assets/musician.jpg';
+                      }}
                       className="w-full h-full object-cover filter grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
                     />
                   </div>
@@ -129,8 +138,11 @@ export const EditorialBioSection: React.FC<EditorialBioSectionProps> = ({
                 <div className="border border-[#262626] bg-[#0A0A0A] p-2 flex flex-col group">
                   <div className="aspect-square overflow-hidden bg-[#141414] mb-2">
                     <img
-                      src={bio.mascotImage}
+                      src={bio.mascotImage || '/assets/gida.jpg'}
                       alt="Mark - Community Mascot"
+                      onError={(e) => {
+                        e.currentTarget.src = '/assets/gida.jpg';
+                      }}
                       className="w-full h-full object-cover filter grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
                     />
                   </div>

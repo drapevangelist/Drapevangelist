@@ -84,8 +84,11 @@ export const HeroDocumentaryPlate: React.FC<HeroDocumentaryPlateProps> = ({
         {/* Hero Documentary Plate Photo Feature */}
         <div className="relative w-full aspect-[21/9] min-h-[320px] max-h-[520px] bg-[#131313] overflow-hidden border border-[#262626] group">
           <img
-            src={plate.photoUrl}
+            src={plate.photoUrl && !plate.photoUrl.includes('lh3.googleusercontent.com/aida/') ? plate.photoUrl : '/assets/plate-uniport-summit.jpg'}
             alt={plate.photoTitle}
+            onError={(e) => {
+              e.currentTarget.src = '/assets/plate-uniport-summit.jpg';
+            }}
             className="w-full h-full object-cover filter grayscale contrast-125 brightness-90 group-hover:scale-105 group-hover:grayscale-0 transition-all duration-700"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/40 to-transparent" />

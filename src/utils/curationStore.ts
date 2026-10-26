@@ -10,7 +10,7 @@ export const STARTER_MOSAIC_ITEMS: MosaicItem[] = [
     title: 'BLOCKCHAIN UNIPORT MASTERCLASS',
     categoryLabel: 'KEYNOTE DISPATCH',
     location: 'Port Harcourt, Nigeria • Decentralized Architecture & Smart Contract Onboarding',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD4aPTrHWHJjbnfGn-LYdFNVn9y97gYUdZC26T2Og2ZQuCZRmtQdLlZCVwbWiBCiSXoRZRlY8Mu4H1hBEQFre9yL2d3vtgm6x53YkYHUFmAFLoThUWD9haFLD5QhfMLKvcsLPPj2EwTViFBE1XWKth2JhdoXzMSv3euhQreHmHkx_b24vCUKjfSYwEWSV0ZWf6c56R_tguBVrBZpVoOJgiEx0W5AHTEAbY9RxK_yJRM5Kwe0ckWgnY',
+    imageUrl: '/assets/proof-masterclass.jpg',
     colSpan: 'md:col-span-7',
   },
   {
@@ -18,7 +18,7 @@ export const STARTER_MOSAIC_ITEMS: MosaicItem[] = [
     title: 'MOVEMENT LABS IRL GATHERING',
     categoryLabel: 'ECOSYSTEM SUMMIT',
     location: 'Lagos • Developer Network & Move Stack Activation',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA9wISW8QWnI9sOyxEgpYvgIolYjxs3mrB-uygDIfNnVpF4X1WdtZz83xQn-70eKaB6heEsPUC1KDyut5IJNoO3HGyGI--PBZxc0-ROQfaNSibwAXICafwWBmyD_pUmHIMaFtILuFgoEFDYv5y6m4WoO3kw381PrT826tyXqJCfonfluqwuz3JydGct-gJw2BvXYSJ0RFNx1Rkro5RltkjioN5MEcm41_ZRCcsYaipWmDmo-4BCgMM',
+    imageUrl: '/assets/proof-movement.jpg',
     colSpan: 'md:col-span-5',
   },
   {
@@ -26,7 +26,7 @@ export const STARTER_MOSAIC_ITEMS: MosaicItem[] = [
     title: 'GLOBAL AMBASSADOR & ECOSYSTEM STEWARD',
     categoryLabel: 'LEADERSHIP PLATE',
     location: 'Ambassador & Operations Lead • Base, Movement Network, Decred, BoonHQ',
-    imageUrl: '/assets/ambassador.jpg',
+    imageUrl: '/assets/portrait.jpg',
     colSpan: 'md:col-span-4',
   },
   {
@@ -50,7 +50,7 @@ export const STARTER_MOSAIC_ITEMS: MosaicItem[] = [
     title: 'BASE BUILDERS ON-CHAIN WORKSHOP',
     categoryLabel: 'BASE BUILDERS',
     location: 'Hands-on smart contract deployment & builder support',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC1cHI95kC5_77xSwPbcNvmYZlA0UVGo5fr_jGtg-m0CAQ1whbmpk7yaPcmtBT2en2lVXurtxkKrPv1wmwU46O5X0_whhLJIgf1yeZ_1-bSf27BVM_diIIt5es-nG6fxTYKRMZCqyPtO0nqnqcoFw5q1-2glwjo8VhPIahgu4cc384HkMJ5I9u3_DNpGsktvGrxdX4I2tLPjF3XpmNwkAukOVOriwAVhSqhyY3DsGx1dV6bt8MKznI',
+    imageUrl: '/assets/proof-base.jpg',
     colSpan: 'md:col-span-6',
   },
   {
@@ -58,7 +58,7 @@ export const STARTER_MOSAIC_ITEMS: MosaicItem[] = [
     title: 'HACK FOR GOOD 2ND PLACE JURY FINALS',
     categoryLabel: 'HACKATHON PODIUM',
     location: 'Port Harcourt • Public Goods & Decentralized Civic Infrastructure',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDI5jn7_Dx-RUpMWU9DW0om5mhluderUt6Bfa73JPLXZOltNcDBOTINjC1jhakNQWXKLY_0__vdP52K92F-VwSc5x7lMz5Fy9Nx2jlMaZYu8Uc0WZ3HnZhtLjnJQ8LtAsdsbpUH5imJnpICQ3---hScNEDU5wDbyke3otZD5-rxmGGKZxOF0kHTHYBzc-LSvoKp4czmIb2M4Lvr59PPoT3sEHMLLnzfmL8Kj2-i8IiQRbdltWxsUv0',
+    imageUrl: '/assets/proof-hackathon.jpg',
     colSpan: 'md:col-span-6',
   },
 ];
@@ -90,6 +90,15 @@ function emitChange() {
       // Safe guard
     }
   });
+}
+
+function cleanImageUrl(url: string | undefined, fallback: string): string {
+  if (!url) return fallback;
+  // If it's a private Google session URL, fallback to reliable permanent local asset
+  if (url.includes('lh3.googleusercontent.com/aida/')) {
+    return fallback;
+  }
+  return url;
 }
 
 // Background sync to server if running with server.ts
@@ -160,13 +169,17 @@ export const curationStore = {
     }
 
     // Merge default content from persistedContent.json with local overrides
-    return {
-      hero: { ...defaultContent.hero, ...(localData.hero || {}) },
-      plate: { ...defaultContent.plate, ...(localData.plate || {}) },
-      bio: { ...defaultContent.bio, ...(localData.bio || {}) },
-      stats: { ...defaultContent.stats, ...(localData.stats || {}) },
-      contact: { ...defaultContent.contact, ...(localData.contact || {}) },
-    };
+    const hero = { ...defaultContent.hero, ...(localData.hero || {}) };
+    const plate = { ...defaultContent.plate, ...(localData.plate || {}) };
+    const bio = { ...defaultContent.bio, ...(localData.bio || {}) };
+    const stats = { ...defaultContent.stats, ...(localData.stats || {}) };
+    const contact = { ...defaultContent.contact, ...(localData.contact || {}) };
+
+    hero.imageUrl = cleanImageUrl(hero.imageUrl, '/assets/portrait.jpg');
+    plate.photoUrl = cleanImageUrl(plate.photoUrl, '/assets/plate-uniport-summit.jpg');
+    bio.portraitUrl = cleanImageUrl(bio.portraitUrl, '/assets/portrait.jpg');
+
+    return { hero, plate, bio, stats, contact };
   },
 
   updateSectionContent<K extends keyof PersistedContentType>(
@@ -268,7 +281,12 @@ export const curationStore = {
       const v = localStorage.getItem(KEYS.MOSAIC_ITEMS);
       if (v) {
         const parsed = JSON.parse(v);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((item: MosaicItem) => ({
+            ...item,
+            imageUrl: cleanImageUrl(item.imageUrl, '/assets/portrait.jpg'),
+          }));
+        }
       }
     } catch {
       // fallback

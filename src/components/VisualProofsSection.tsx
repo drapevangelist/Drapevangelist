@@ -322,7 +322,7 @@ export const VisualProofsSection: React.FC = () => {
                   alt={item.title}
                   className="w-full h-full object-cover object-center filter grayscale contrast-125 brightness-95 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500 ease-out"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=800&q=80';
+                    (e.target as HTMLImageElement).src = '/assets/proof-masterclass.jpg';
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent opacity-80" />
@@ -498,6 +498,9 @@ export const VisualProofsSection: React.FC = () => {
                   <img
                     src={activeMedia.mediaUrl}
                     alt={activeMedia.title}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/assets/proof-masterclass.jpg';
+                    }}
                     className="w-full max-h-[60vh] object-contain"
                   />
                 )}

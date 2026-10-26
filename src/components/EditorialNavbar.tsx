@@ -19,7 +19,8 @@ export const EditorialNavbar: React.FC<EditorialNavbarProps> = ({ onOpenContact 
   const [isEditorModalOpen, setIsEditorModalOpen] = useState(false);
   const [userPortrait, setUserPortrait] = useState(() => {
     const content = curationStore.getLiveContent();
-    return content.bio?.portraitUrl || content.hero?.imageUrl || '/assets/ambassador.jpg';
+    const url = content.bio?.portraitUrl || content.hero?.imageUrl;
+    return url && !url.includes('lh3.googleusercontent.com/aida/') ? url : '/assets/portrait.jpg';
   });
 
   useEffect(() => {
@@ -33,7 +34,8 @@ export const EditorialNavbar: React.FC<EditorialNavbarProps> = ({ onOpenContact 
     const unsubCurator = curationStore.subscribe(() => {
       setIsCurator(curationStore.isCuratorMode());
       const content = curationStore.getLiveContent();
-      setUserPortrait(content.bio?.portraitUrl || content.hero?.imageUrl || '/assets/ambassador.jpg');
+      const url = content.bio?.portraitUrl || content.hero?.imageUrl;
+      setUserPortrait(url && !url.includes('lh3.googleusercontent.com/aida/') ? url : '/assets/portrait.jpg');
     });
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -81,6 +83,9 @@ export const EditorialNavbar: React.FC<EditorialNavbarProps> = ({ onOpenContact 
                 <img
                   src={userPortrait}
                   alt="drapevangelist"
+                  onError={(e) => {
+                    e.currentTarget.src = '/assets/portrait.jpg';
+                  }}
                   className="h-10 w-10 sm:h-11 sm:w-11 rounded-full object-cover object-top border-2 border-[#D32F2F] group-hover:border-[#FFFFFF] transition-all duration-300 ring-2 ring-[#0A0A0A] shadow-md"
                 />
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#D32F2F] rounded-full border-2 border-[#0A0A0A]" />
